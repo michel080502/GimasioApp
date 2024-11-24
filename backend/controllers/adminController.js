@@ -1,9 +1,11 @@
 import Admin from "../models/Admin.js";
 import generarJWT from "../helpers/generarJWT.js";
 import generarId from "../helpers/generarId.js";
+import emailRegistro from "../helpers/emailRegistro.js";
+import emailOlvidePassword from "../helpers/emailOlvidePassword.js";
 
 const registrar = async (req, res) =>{
-	const { nommbre, password, email,  } = req.body;
+	const { nombre, email,  } = req.body;
 
 	//Prevenir duplicado de email
 	const existeUsuario = await Admin.findOne({email});
@@ -16,6 +18,14 @@ const registrar = async (req, res) =>{
 		// Guardar un nuevo admin
 		const admin = new Admin(req.body);
 		const adminGuardado = await admin.save();
+
+		// Enviar email
+		emailRegistro({
+			email,
+			nombre,
+			token: adminGuardado.token
+		});
+
 		res.json({ 
 			msg: "Registrando usuario....",
 		});
@@ -27,7 +37,7 @@ const registrar = async (req, res) =>{
 
 const perfil = (req, res) =>{
 	const { admin } = req;
-	res.json({ peril: admin });
+	res.json({ admin });
 }
 
 const confirmar = async (req, res) => {
@@ -35,7 +45,7 @@ const confirmar = async (req, res) => {
 	const usuarioConfirmar = await Admin.findOne({token});
 	if(!usuarioConfirmar){
 		const error = new Error('Token no valido');
-		return res.status(400).json({msj: error.message})
+		return res.status(400).json({msg: error.message})
 	}
 	try{
 		usuarioConfirmar.token = null;
@@ -53,7 +63,7 @@ const autenticar = async (req, res) => {
 	// Comprobar si existe
 	const usuario = await Admin.findOne({email});
 	if(!usuario){
-		const error = new Error("El ususario no existe");
+		const error = new Error("El usuario no existe");
 		return res.status(404).json({msg: error.message});
 	}
 
@@ -84,6 +94,13 @@ const olvidePassword = async (req, res) => {
 	try{
 		existeAdmin.token = generarId();
 		await existeAdmin.save();
+
+		// Enviar email con instrucciones
+		emailOlvidePassword({
+			email,
+			nombre: existeAdmin.nombre,
+			token: existeAdmin.token
+		});
 		res.json({msg: "Hemos enviado un email con las instrucciones"});
 	} catch(error){
 		console.log(error);

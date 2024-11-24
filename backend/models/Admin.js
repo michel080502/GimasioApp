@@ -8,9 +8,10 @@ const adminSchema = mongoose.Schema({
 		required: true,
 		trim: true
 	},
-	password: {
+	apellido: {
 		type: String,
-		required: true
+		required: true,
+		trim: true
 	},
 	email: {
 		type: String,
@@ -22,6 +23,10 @@ const adminSchema = mongoose.Schema({
 		type: String,
 		default: null,
 		trim: true
+	},
+	password: {
+		type: String,
+		required: true
 	},
 	token:{
 		type: String,
