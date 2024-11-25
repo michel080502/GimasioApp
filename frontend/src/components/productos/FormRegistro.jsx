@@ -1,34 +1,117 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { MdAddPhotoAlternate, MdAddAPhoto  } from "react-icons/md"; 
 import { FaRegFileImage } from "react-icons/fa";
-import { openCamera, capturePhoto } from "../../utils/cameraUtils";
-
+import Alerta from "../Alerta";
+import Camera from "../ui/Camera";
 const FormRegistro = () => {
-	// const [ file, setFile ] = useState(null);
+	const [ file, setFile ] = useState(null);
+	const [ alerta, setAlerta ] = useState({msg: "", error:false});
+
+	const [isCameraOpen, setIsCameraOpen] = useState(false);
 	const [ imagePreview, setImagePreview ] = useState(null);
 	const [ showOptions, setShowOptions ] = useState(null);
-	// const [ imagePreview, setImagePreview ] = useState(null);
-	const [ isCameraOpen, setIsCameraOpen ] = useState(false);
 
-	const videoRef = useRef(null);
-	const canvasRef = useRef(null);
-	
-	const toggleOptions = () =>{
-		setShowOptions((prev) => !prev)
-	}
-	const closeCamera = () =>{
-		if(videoRef.current){
-			const stream = videoRef.current.srcObject;
-			const tracks = stream.getTracks();
-			tracks.forEach((track) => track.stop());
+	const handleSubmit =  (e) =>{
+		e.preventDefault();
+		if(!file){
+			setAlerta({msg: "Por favor selecciona imagen", error: true});
+			return;
 		}
 
-		setIsCameraOpen(false);
+		setAlerta({msg: 'Ok', error:false})
 	}
+	
+	const toggleOptions = () => {
+		setShowOptions((prev) => !prev);
+	};
+
+	const resizeImage = (file, size = 300) =>{
+		return new Promise((resolve, reject) =>{
+			const img = new Image();
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				img.src = e.target.result;
+			};
+
+			reader.readAsDataURL(file);
+
+			img.onload = () => {
+				const canvas = document.createElement("canvas");
+				const ctx = canvas.getContext("2d");
+	
+				// Configura el tamaño del canvas
+				canvas.width = size;
+				canvas.height = size;
+	
+				// Escala la imagen y centra
+				const scale = Math.max(size / img.width, size / img.height);
+				const x = (size - img.width * scale) / 2;
+				const y = (size - img.height * scale) / 2;
+	
+				// Rellena el fondo (opcional)
+				ctx.fillStyle = "#FFF";
+				ctx.fillRect(0, 0, size, size);
+	
+				// Dibuja la imagen redimensionada y centrada
+				ctx.drawImage(
+					img,
+					0,
+					0,
+					img.width,
+					img.height,
+					x,
+					y,
+					img.width * scale,
+					img.height * scale
+				);
+	
+				// Convierte a blob para enviar al backend
+				canvas.toBlob(
+					(blob) => resolve(blob),
+					"image/jpeg",
+					0.8 // Calidad de compresión
+				);
+
+			};
+	
+			img.onerror = (err) => reject(err);
+		})
+	}
+
+	const handleCapture = (imageData) => {
+		setImagePreview(imageData);
+		setFile(imageData)
+		setIsCameraOpen(false); // Cierra la cámara después de capturar
+	};
+	
+	const handleFileChange = async (e) =>{
+		const selectedFile = e.target.files[0];
+		if(selectedFile){
+			try {
+				// Redimensiona la imagen y guarda el resultado
+				const resizedImage = await resizeImage(selectedFile);
+				setFile(resizedImage);
+		
+				// Genera una vista previa
+				const reader = new FileReader();
+				reader.onload = () => setImagePreview(reader.result);
+				reader.readAsDataURL(resizedImage);
+			} catch (err) {
+				console.error("Error al procesar la imagen:", err);
+			}
+		}
+	};
+
+	const {msg} = alerta;
+	
 	return (
 		<>
-			<form 
+			<form
+				onSubmit={handleSubmit}
 				className="border p-3 grid gap-5 justify-center">
+				{msg && (
+					<Alerta alerta={alerta} />
+				)}
 				<div 
 				className="grid grid-cols-3 gap-6 relative">
 					<div 
@@ -80,8 +163,8 @@ const FormRegistro = () => {
 									type="file"
 									accept="image/*"
 									className="hidden"
-									onChange={() => {
-									// handleFileChange(e);
+									onChange={(e) => {
+									handleFileChange(e);
 									setShowOptions(false); // Oculta las opciones después de seleccionar
 									}}
 									/>
@@ -92,7 +175,7 @@ const FormRegistro = () => {
 									<button
 									type="button"
 									onClick={() => {
-									openCamera(videoRef, setIsCameraOpen);
+									setIsCameraOpen(true)
 									setShowOptions(false); // Oculta las opciones después
 									}}
 									>
@@ -105,26 +188,10 @@ const FormRegistro = () => {
 					</div>
 					
 					{isCameraOpen && (
-						<div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-20">
-							<video ref={videoRef} className="w-full max-w-md h-auto bg-black" />
-								<div className="flex gap-4 mt-4">
-									<button
-										type="button"
-										className="px-4 py-2 bg-red-500 text-white rounded"
-										onClick={closeCamera}
-									>
-									Cerrar Cámara
-									</button>
-									<button
-										type="button"
-										className="px-4 py-2 bg-green-500 text-white rounded"
-										onClick={capturePhoto(videoRef, canvasRef, setImagePreview,  setIsCameraOpen)}
-									>
-									Capturar Foto
-									</button>
-								</div>
-							<canvas ref={canvasRef} className="hidden"></canvas>
-						</div>
+						<Camera
+						onCapture={handleCapture}
+						onClose={() => setIsCameraOpen(false)}
+						/>
 					)}
 				
 					<div className="col-span-2 grid gap-2 grid-cols-2">

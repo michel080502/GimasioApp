@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 const AuthContext = createContext() 
 
 const AuthProvider = ({ children }) => {
-    const [auth, setAuth] = useState({}) // Estado de ejemplo para el contexto
+    const [auth, setAuth] = useState(null) // Estado de ejemplo para el contexto
 	const [ cargando, setCargando ] = useState(true);
 
 	useEffect(() =>{
@@ -26,17 +26,22 @@ const AuthProvider = ({ children }) => {
 				const { data } = await clienteAxios('/admin/perfil', config);
 				setAuth(data);
 			} catch (error){
-				console.log(error.response.data.msg)
-				setAuth({})
+				console.log('Error:', error.response.data.msg)
 			}
 			setCargando(false);
 		}
 		autenticarUsuario();
 	}, []);  // Dependencias vacias para que se ejecute 1 vez
+
+	const cerrarSesion = () =>{
+		localStorage.removeItem('token');
+		setAuth({});
+	}
+
     return (
         <AuthContext.Provider 
 			value={ //  los valores disponibles cuando se mande a llamar el hook de useAuth
-				{ auth, setAuth, cargando }
+				{ auth, setAuth, cargando, cerrarSesion }
 			}
 		>
             {children}
@@ -45,7 +50,7 @@ const AuthProvider = ({ children }) => {
 }
 
 AuthProvider.propTypes = {
-    children: PropTypes.node.isRequired
+    children: PropTypes.node
 }
 
 export {

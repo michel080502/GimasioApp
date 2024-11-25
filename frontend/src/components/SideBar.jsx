@@ -6,9 +6,11 @@ import { BsFillPassportFill } from "react-icons/bs";
 import PropTypes from 'prop-types';
 import { NavLink } from "react-router-dom";
 import { useState } from "react"
+import useAuth from "../hooks/useAuth";
 
 const SideBar = ({ admin }) => {
 	const [ showMenu, setShowMenu ] = useState(false);
+	const { cerrarSesion } = useAuth();
 	return (
 	<>
 		<aside 
@@ -20,7 +22,10 @@ const SideBar = ({ admin }) => {
 					className="w-20 h-20 object-cover rounded-full ring-4 ring-red-900"
 				/>
 				<h1 className="text-xl text-center text-white font-bold">{`${admin.nombre} ${admin.apellido}`}</h1>
-				<button className="button">Cerrar sesión</button>
+				<button 
+					className="button"
+					onClick={cerrarSesion}>
+					Cerrar sesión</button>
 			</div>
 			<nav className=" bg-zinc-800 rounded-tr-[40px] h-full flex flex-col justify-between">
 				<div>
