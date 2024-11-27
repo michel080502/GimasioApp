@@ -2,7 +2,7 @@ import { RiFileExcel2Fill } from "react-icons/ri";
 const CardsPrincipales = () => {
   return (
 	
-		<div className="grid grid-cols-4 gap-3">
+		<div className=" grid grid-cols-4 gap-3">
 			<div className= " bg-white p-3 rounded-xl shadow-lg shadow-gray-500/50">
 				<div className="flex justify-between items-center border-b-2 border-red-600 p-3 mb-2 ">
 					<p className="font-semibold">Ingresos del día</p>

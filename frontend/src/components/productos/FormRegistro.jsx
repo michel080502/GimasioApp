@@ -4,6 +4,15 @@ import { FaRegFileImage } from "react-icons/fa";
 import Alerta from "../Alerta";
 import Camera from "../ui/Camera";
 const FormRegistro = () => {
+	const [ nombre, setNombre ] = useState("");
+	const [ marca, setMarca ] = useState("");
+	const [ categoria, setCategoria ] = useState("");
+	const [ stock, setStock ] = useState(0);
+	const [ precio, setPrecio ] = useState(0.00);
+	const [ descuento, setDescuento ] = useState(0.00);
+	const [ descripcion, setDescripcion ] = useState("");
+	const [ total, setTotal ] = useState(0.00);
+
 	const [ file, setFile ] = useState(null);
 	const [ alerta, setAlerta ] = useState({msg: "", error:false});
 
@@ -13,12 +22,29 @@ const FormRegistro = () => {
 
 	const handleSubmit =  (e) =>{
 		e.preventDefault();
-		if(!file){
+		if(file == null){
 			setAlerta({msg: "Por favor selecciona imagen", error: true});
 			return;
 		}
+		if([nombre, marca, categoria, descripcion].includes('') ){
+			setAlerta({msg: "Por completa campos faltantes", error: true});
+			return;
+		}
 
+		if([stock, precio, descuento, total] == 0) {
+			setAlerta({msg: "Por ingresa el total", error: true});
+			return;
+		}
+		
 		setAlerta({msg: 'Ok', error:false})
+	}
+	const generarTotal = () =>{
+		if(precio && descuento != 0){
+			const suma = precio - descuento;
+			setTotal(suma);
+		} else {
+			setAlerta({msg: 'Necesitas precio y descuento', error: true})
+		}
 	}
 	
 	const toggleOptions = () => {
@@ -135,12 +161,14 @@ const FormRegistro = () => {
 						<button
 							type="button"
 							className="text-center text-3xl w-48  font-extrabold  justify-center "
+							onClick={generarTotal}
 							>
 							<p className="flex gap-1 absolut justify-center">
 								$
 								<input
 								className="w-28 text-center rounded"
 								type="text"
+								value={total}
 								placeholder="200.00"
 								disabled />
 							</p>
@@ -202,7 +230,8 @@ const FormRegistro = () => {
 							<input 
 							className="border p-2 rounded-lg"
 							type="text"
-							
+							value={nombre}
+							onChange={(e) => setNombre(e.target.value)}
 							placeholder="ejm: Proteina en polvo" />
 						</div>
 						<div className=" grid col-span-2 ">
@@ -212,7 +241,8 @@ const FormRegistro = () => {
 							<input 
 							className="border p-2 rounded-lg"
 							type="text"
-							
+							value={marca}
+							onChange={(e) => setMarca(e.target.value)}
 							placeholder="ejm: DragonPharma" />
 							
 						</div>
@@ -223,7 +253,8 @@ const FormRegistro = () => {
 							<input 
 							className="border p-2 rounded-lg"
 							type="text"
-							
+							value={categoria}
+							onChange={(e) => setCategoria(e.target.value)}
 							placeholder="ejm: Proteina" />
 						</div>
 						
@@ -234,22 +265,29 @@ const FormRegistro = () => {
 							<input 
 							className="border p-2 rounded-lg"
 							placeholder="ejm: 50"
+							value={stock}
+							onChange={(e) => setStock(e.target.value)}
 							type="number" />
 						</div>
-						<div className=" grid">
-							<label className=" p-1 font-bold">
-							Precio
+						<div className="grid">
+							<label className="p-1 font-bold">
+								Precio
 							</label>
 							<div className="relative">
 								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
 								<input
-									className="border p-2 pl-8 rounded-lg w-full"
-									type="number"
-									placeholder="ejm: 300.00"
+								className="border p-2 pl-8 rounded-lg w-full"
+								value={precio}
+								onChange={(e) => setPrecio(e.target.value)}
+							
+								type="number"
+								min={0}
+								step={0.01}
+								placeholder="ejm: 300.00"
 								/>
 							</div>
-							
 						</div>
+
 						
 						<div className=" grid">
 							<label className=" p-1 font-bold">
@@ -260,6 +298,8 @@ const FormRegistro = () => {
 								<input
 									className="border p-2 pl-8 rounded-lg w-full"
 									type="number"
+									value={descuento}
+									onChange={(e) => setDescuento(e.target.value)}
 									placeholder="ejm: 100.00"
 								/>
 							</div>
@@ -272,6 +312,8 @@ const FormRegistro = () => {
 							<textarea
 								className="border p-2 rounded-lg w-full resize-none"
 								placeholder="Escribe tu descripcion aquí..."
+								value={descripcion}
+								onChange={(e) => setDescripcion(e.target.value)}
 								rows="4"
 							></textarea>
 						</div>

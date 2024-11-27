@@ -37,16 +37,23 @@ const OlvidePassword = () => {
 	const { msg } = alerta;
   return (
     <>
-		<div className="shadow-md w-3/4 shadow-slate-600 p-3 mx-20 rounded-2xl h-4/5 flex flex-col justify-center items-center gap-3">
-			<h1 className="text-5xl m-6 font-bold">Reestablecer</h1>
-			{msg && 
-				<Alerta
-					alerta={alerta}
+		<div className="contenedor-auth">
+			{/* Imagen para móviles */}
+			<img 
+				className="img-auth-mobile" 
+				src="/assets/login.png" 
+				alt="logo-inicio-movil" 
 				/>
-			}
+			<h1 className="text-3xl m-6 font-bold">Reestablecer</h1>
+			
 			<form 
 				className=" font-medium  flex flex-col gap-7" 
 				onSubmit={handleSubmit}>
+					{msg && 
+						<Alerta
+							alerta={alerta}
+						/>
+					}
 				<p className="text-gray-500">Ingresa tu correo para reestablecer tu contraseña</p>
 				<div className="grid gap-1">
 					<label 
@@ -67,11 +74,11 @@ const OlvidePassword = () => {
 					type='submit'
 					className="border-gray-500 text-white border  font-bold p-2 bg-red-800 w-52 mx-auto rounded-2xl hover:bg-red-600 transition duration-300 ease-in-out">Enviar instrucciones</button>
 			</form>
-			<nav>
+			<nav className='lg:flex lg:justify-center text-center'>
 				<p className="m-5 text-gray-600 ">¿Quieres iniciar sesión? <span className='font-semibold text-gray-800'><Link to="/"> Aquí</Link></span></p>
 			</nav>
 		</div>
-		<div className="bg-zinc-800 text-white h-dvh w-full flex flex-col justify-center place-items-center rounded-l-2xl">
+		<div className="contenedor-img-auth">
 			<img className=" my-6 w-80 " src="/assets/login.png" alt="logo-inicio" />
 		</div>
     </>

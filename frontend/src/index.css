@@ -25,6 +25,16 @@
 	.button{
 		@apply bg-red-900 hover:bg-red-600 transition duration-300 py-1 px-3 rounded-full font-semibold text-white
 	}
+	.contenedor-auth{
+		@apply  shadow-md w-3/4 shadow-slate-600 p-3 m-auto  md:my-0 md:mx-20 rounded-2xl flex flex-col justify-center items-center text-sm col-span-1 gap-3
+	}
+
+	.img-auth-mobile{
+		@apply  shadow-lg block md:hidden w-28  mx-auto -mt-11 bg-black p-4 rounded-full ring ring-red-700
+	}
+	.contenedor-img-auth{
+		@apply hidden md:flex bg-zinc-800 text-white h-dvh w-full flex-col justify-center place-items-center rounded-l-2xl
+	}
 }
 
 body{

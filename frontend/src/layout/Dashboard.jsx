@@ -9,16 +9,29 @@ function Dashboard() {
   return (
     
     <>
-    <div className='grid lg:grid-cols-4 xl:grid-cols-6 min-h-screen'>
-      <div className='h-full'>
-        <SideBar admin={auth || {}} />
-      </div> 
-      <main className='lg:col-span-3 xl:col-span-5 overflow-x-auto'>
+    <div className="min-h-screen flex flex-col">
+      {/* Header Fijo */}
+      <header className="fixed top-0 w-full bg-zinc-900 text-white z-10">
         <Header admin={auth || {}} />
-        {auth?._id ? (<Outlet />) : (<Navigate to="/"/>)} 
-      </main>
-      
+      </header>
+
+      <div className="flex flex-1 md:pt-[60px]"> {/* Ajusta pt según la altura de tu header */}
+        {/* Sidebar Fijo */}
+        <div className="fixed z-100 h-[93%] w-[20%]">
+          <SideBar admin={auth || {}} />
+        </div>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className=" md:pl-[20%]">
+            {/* Mostrar la página de contenido */}
+            {auth?._id ? <Outlet /> : <Navigate to="/" />}
+          </div>
+        </main>
+      </div>
     </div>
+
+
       
     </>
 	

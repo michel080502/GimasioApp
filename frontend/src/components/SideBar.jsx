@@ -14,14 +14,14 @@ const SideBar = ({ admin }) => {
 	return (
 	<>
 		<aside 
-		className={`bg-zinc-900 h-full flex flex-col fixed lg:static  w-[80%] md:w-[30%] lg:w-full transition-all duration-500 
-		${showMenu ? "left-0" : "-left-full"} `} >
+		className={`bg-zinc-900 h-full flex flex-col fixed md:static w-[80%] md:w-[20%] lg:w-full transition-all duration-500
+			${showMenu ? "left-0" : "-left-full"}`}>
 			<div className="flex flex-col items-center justify-center p-8 gap-4"> 
 				<img 
 					src="/assets/logo.jpg"
 					className="w-20 h-20 object-cover rounded-full ring-4 ring-red-900"
 				/>
-				<h1 className="text-xl text-center text-white font-bold">{`${admin.nombre} ${admin.apellido}`}</h1>
+				<h1 className=" text-center text-white font-bold">{`${admin.nombre} ${admin.apellido}`}</h1>
 				<button 
 					className="button"
 					onClick={cerrarSesion}>
