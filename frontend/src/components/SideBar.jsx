@@ -14,7 +14,7 @@ const SideBar = ({ admin }) => {
 	return (
 	<>
 		<aside 
-		className={`bg-zinc-900 h-full flex flex-col fixed md:static w-[80%] md:w-[20%] lg:w-full transition-all duration-500
+		className={`bg-zinc-900 h-[100%] flex flex-col fixed md:static w-[80%] md:w-[40%] lg:w-full transition-all duration-500
 			${showMenu ? "left-0" : "-left-full"}`}>
 			<div className="flex flex-col items-center justify-center p-8 gap-4"> 
 				<img 

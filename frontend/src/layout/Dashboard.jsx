@@ -15,15 +15,15 @@ function Dashboard() {
         <Header admin={auth || {}} />
       </header>
 
-      <div className="flex flex-1 md:pt-[60px]"> {/* Ajusta pt según la altura de tu header */}
+      <div className="flex flex-1 md:pt-[60px]">
         {/* Sidebar Fijo */}
-        <div className="fixed z-100 h-[93%] w-[20%]">
+        <div className="fixed z-100 h-0 md:h-[92.5%]  w-[18%]">
           <SideBar admin={auth || {}} />
         </div>
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
-          <div className=" md:pl-[20%]">
+          <div className=" md:pl-[18%]">
             {/* Mostrar la página de contenido */}
             {auth?._id ? <Outlet /> : <Navigate to="/" />}
           </div>
