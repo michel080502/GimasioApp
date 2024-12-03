@@ -1,130 +1,170 @@
-import Cliente from "../models/Cliente.js";
+import pool from "../config/db.js";
 import { uploadImage, deleteImage } from "../helpers/cloudinary.js";
 // fs es un modulo que extiende las capacidades de FileSystem a recibir promesas
-import fs from 'fs-extra'
-
+import fs from "fs-extra";
 
 const crear = async (req, res) => {
-	try {
-		const { matricula } = req.body;
+  const {
+    nombre,
+    apellidoPaterno,
+    apellidoMaterno,
+    telefono,
+    nacimiento,
+    email,
+    matricula,
+  } = req.body;
 
-		// Verificar si ya existe un cliente con la misma matrícula
-		const existeCliente = await Cliente.findOne({ matricula });
-		if (existeCliente) {
-			const error = new Error('Cliente ya existe');
-			return res.status(400).json({ msg: error.message });
-		}
+  // Verificar si ya existe un cliente con la misma matrícula
+  const query = "SELECT * FROM clientes WHERE matricula = $1 OR email = $2";
+  try {
+    const { rows: clienteExiste } = await pool.query(query, [matricula, email]);
+    if (clienteExiste.length > 0) {
+      const mensajeError = clienteExiste.some((c) => c.matricula === matricula)
+        ? "La matrícula ya está registrada."
+        : "El correo electrónico ya está registrado.";
+      return res.status(400).json({ msg: mensajeError });
+    }
 
-		// Manejar la imagen si existe
-		let img = {};
-		if (req.files?.img) {
-			const resultImg = await uploadImage(req.files.img.tempFilePath);
-			img = {
-				public_id: resultImg.public_id,
-				secure_url: resultImg.secure_url,
-			};
-			await fs.unlink(req.files.img.tempFilePath);
-		}
+    // Manejar la imagen si existe
+    let img = {};
+    if (req.files?.img) {
+      const resultImg = await uploadImage(req.files.img.tempFilePath);
+      img = {
+        public_id: resultImg.public_id,
+        secure_url: resultImg.secure_url,
+      };
+      await fs.unlink(req.files.img.tempFilePath);
+    }
 
-		// Crear el cliente con todos los datos, incluyendo la imagen
-		const clienteData = {
-			...req.body,
-			img, // Agregamos la imagen al objeto
-		};
+    const insertQuery = `
+	 	INSERT INTO clientes (nombre, apellido_paterno, apellido_materno, telefono, nacimiento, email, matricula, img_public_id, img_secure_url) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	  `;
 
-		const cliente = new Cliente(clienteData);
+    await pool.query(insertQuery, [
+      nombre,
+      apellidoPaterno,
+      apellidoMaterno,
+      telefono,
+      nacimiento,
+      email,
+      matricula,
+      img.public_id || null,
+      img.secure_url || null,
+    ]);
 
-		// Guardar el cliente en la base de datos
-		const clienteSave = await cliente.save();
-
-		// Respuesta exitosa
-		res.status(200).json({
-			msg: 'Cliente registrado exitosamente'
-		});
-	} catch (error) {
-		console.error(error);
-		res.status(500).json({ msg: 'Error al registrar el cliente' });
-	}
+    res.json({
+      msg: "Cliente registrado exitosamente",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Error al registrar el cliente" });
+  }
 };
 
-const update = async (req, res) =>{
-	const { id } = req.params;
-	const { nombre, apellidoPaterno, apellidoMaterno, telefono, email, nacimiento, matricula } = req.body;
-	const cliente = await Cliente.findById( id );
-	if(!cliente) {
-		const error = new Error("Cliente no encontrado");
-		return res.status(400).json({msg: error.message});
-	}
-	try {
-        const cliente = await Cliente.findByIdAndUpdate(
-            id, 
-            {
-                nombre,
-                apellidoPaterno,
-                apellidoMaterno,
-                telefono,
-                email,
-                nacimiento,
-                matricula,
-            },
-            { new: true } // Retorna el documento actualizado
-        );
+const update = async (req, res) => {
+  const { id } = req.params;
+  const {
+    nombre,
+    apellidoPaterno,
+    apellidoMaterno,
+    telefono,
+    email,
+    nacimiento,
+    matricula,
+  } = req.body;
 
-        if (!cliente) {
-            return res.status(404).json({ msg: "Cliente no encontrado" });
-        }
+  const queryFind = "SELECT * FROM clientes WHERE id = $1";
+  try {
+    const { rows: cliente } = await pool.query(queryFind, [id]);
+    if (cliente.length === 0) {
+      const error = new Error("Cliente no encontrado");
+      return res.status(404).json({ msg: error.message });
+    }
+    const queryUpdate = `
+		UPDATE clientes
+		SET 
+			nombre = $1, 
+			apellido_paterno = $2, 
+			apellido_materno = $3, 
+			telefono = $4, 
+			email = $5, 
+			nacimiento = $6, 
+			matricula = $7
+		WHERE id = $8
+	`;
 
-        res.json({ msg: "Cliente modificado correctamente" });
-	} catch (error){
-		console.log(error);
-	}
-}
+    await pool.query(queryUpdate, [
+      nombre || cliente[0].nombre,
+      apellidoPaterno || cliente[0].apellido_paterno,
+      apellidoMaterno || cliente[0].apellido_materno,
+      telefono || cliente[0].telefono,
+      email || cliente[0].email,
+      nacimiento || cliente[0].nacimiento,
+      matricula || cliente[0].matricula,
+      id,
+    ]);
 
-const getAll = async (req, res) =>{
-	try {
-		const clientes = await Cliente.find();
-		res.json(clientes);
-	} catch(error){
-		console.log(error)
-	}
-	
-}
+    res.json({ msg: "Cliente modificado correctamente" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo error al ingresar el cliente" });
+  }
+};
 
-const getById = async (req, res) =>{
-	const { id } = req.params;
-	try {
-		const cliente = await Cliente.findById(id);
-		if(!cliente){
-			const error = new Error("Cliente no encontrado");
-			return res.status(400).json({msg: error.message})
-		}
-		return res.json(cliente);
-	} catch(error){
-		console.log(error)
-	}
-	
-}
+const getAll = async (req, res) => {
+  try {
+    const selectQuery = "SELECT * FROM clientes ORDER BY id DESC;";
+    const { rows: clientes } = await pool.query(selectQuery);
+	// Convertir la fecha de nacimiento a solo fecha en formato YYYY-MM-DD
+    const clientesFormateados = clientes.map(cliente => ({
+		...cliente,
+		nacimiento: cliente.nacimiento.toISOString().split('T')[0], 
+	  }));
+    res.json(clientesFormateados);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo error al obtener los clientes" });
+  }
+};
 
-const deleteById = async (req, res) =>{
-	const { id } = req.params;
-	
-	try {
-		const cliente = await Cliente.findByIdAndDelete(id);
-		if(!cliente){
-			const error = new Error("Cliente no encontrado");
-			return res.status(400).json({msg: error.message})
-		}
-		await deleteImage(cliente.img.public_id);
-		return res.json({msg: 'Cliente eliminado correctamente'})
-	} catch(error){ 
-		console.log(error);
-	}
-}
+const getById = async (req, res) => {
+  const { id } = req.params;
+  const query = "SELECT * FROM clientes WHERE id = $1"
+  try {
+    const { rows } = await pool.query(query, [id]);
+    if (rows.length === 0) {
+      const error = new Error("Cliente no encontrado");
+      return res.status(400).json({ msg: error.message });
+    }
+	const clienteFormateado = {
+		...rows[0],
+      nacimiento: rows[0].nacimiento.toISOString().split('T')[0], 
+	};
 
-export {
-	crear,
-	update,
-	getAll,
-	getById,
-	deleteById
-}
+    return res.json(clienteFormateado);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const deleteById = async (req, res) => {
+  const { id } = req.params;
+
+  const deleteQuery = "DELETE FROM clientes WHERE id = $1 RETURNING *";
+
+  try {
+    const {rows: deletedClient } = await pool.query(deleteQuery, [id]);
+    if (deletedClient.length === 0) {
+      const error = new Error("Cliente no encontrado");
+      return res.status(400).json({ msg: error.message });
+    }
+    await deleteImage(deletedClient[0].img_public_id);
+    return res.json({ msg: "Cliente eliminado correctamente"});
+  } catch (error) {
+    console.log(error);
+	res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+};
+
+export { crear, update, getAll, getById, deleteById };

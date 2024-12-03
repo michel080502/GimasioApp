@@ -87,14 +87,14 @@ const TablaClientes = ({ openModal }) => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 text-center items-center">
               {clientes.map((cliente, index) => (
-                <tr key={cliente._id} className="hover:bg-gray-100 ">
+                <tr key={cliente.id} className="hover:bg-gray-100 ">
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
                     {index + 1}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700 ">
                     <img
                       className="w-16 rounded-full ring-2 ring-red-800 m-auto"
-                      src={cliente.img.secure_url}
+                      src={cliente.img_secure_url}
                       alt="profile"
                     />
                   </td>
@@ -116,7 +116,7 @@ const TablaClientes = ({ openModal }) => {
                       <button
                         className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
                         onClick={() => {
-                          openModal("editar", cliente._id);
+                          openModal("editar", cliente.id);
                         }}
                       >
                         <FaUserEdit className="text-3xl" />
@@ -124,13 +124,13 @@ const TablaClientes = ({ openModal }) => {
                       <button
                         className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
                         onClick={() => {
-                          toggleDelete(cliente._id);
+                          toggleDelete(cliente.id);
                         }}
                       >
                         <MdDelete className="text-3xl" />
                       </button>
                       {/* Muestra recuadro de confirmacion */}
-                      {deleteCliente === cliente._id && (
+                      {deleteCliente === cliente.id && (
                         <div className="absolute  mt-2 bg-white border rounded-lg shadow-lg w-56 z-10 p-4 ">
                           <h1 className="text-lg font-semibold text-gray-700 mb-2">
                             ¿Seguro que deseas eliminar a <br />
@@ -150,7 +150,7 @@ const TablaClientes = ({ openModal }) => {
                               className="bg-rose-500 text-white py-1 px-3 rounded hover:bg-rose-600"
                               onClick={() => {
                                 // Aquí puedes manejar la lógica de eliminación
-                                handleDelete(cliente._id);
+                                handleDelete(cliente.id);
                                 setDeleteCliente(null);
                               }}
                             >

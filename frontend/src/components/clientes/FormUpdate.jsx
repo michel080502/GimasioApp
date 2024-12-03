@@ -88,7 +88,7 @@ const FormUpdate = ({id}) => {
 						onClick={toggleOptions}>
 						<img 
 						className="rounded-lg shadow-lg"
-						src={cliente.img.secure_url} alt="profile" />
+						src={cliente.img_secure_url} alt="profile" />
 					</button>
 					{/* Opciones para imagen */}
 					{showOptions && (
@@ -130,7 +130,7 @@ const FormUpdate = ({id}) => {
 						className="border p-2 rounded-lg"
 						type="text"
 						name="apellidoPaterno"
-						value={cliente.apellidoPaterno || ""}
+						value={cliente.apellido_paterno || ""}
 						onChange={handleChange}
 						placeholder="Apellido"
 					/>
@@ -143,7 +143,7 @@ const FormUpdate = ({id}) => {
 						className="border p-2 rounded-lg"
 						type="text"
 						name="apellidoMaterno"
-						value={cliente.apellidoMaterno || ""}
+						value={cliente.apellido_materno || ""}
 						onChange={handleChange}
 						placeholder="Apellido"
 					/>

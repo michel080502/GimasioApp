@@ -1,15 +1,22 @@
-import mongoose from 'mongoose';
+import pg from "pg";
+import dotenv from "dotenv";
+dotenv.config();
 
-const conectarDB =  async () => {
-	try{
-		const db = await mongoose.connect(process.env.MONGO_URI);
+const pool = new pg.Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+});
 
-		const url = `${db.connection.host}:${db.connection.port}`;
-		console.log(`MongoDB conectado en: ${url}`);
-	} catch (error){
-		console.log(`error: ${error.message}`);
-		process.exit(1); // Gracias a esto imprimira mensjae de error
-	}
-}
+pool
+  .query("SELECT NOW()")
+  .then((result) => {
+    console.log("Conectado a la base:", result.rows[0]);
+  })
+  .catch((err) => {
+    console.error("Error al conectar a la base de datos:", err.message);
+  });
 
-export default conectarDB;
+export default pool;

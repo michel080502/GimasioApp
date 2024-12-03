@@ -2,16 +2,16 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import fileUpload from "express-fileupload";
-import conectarDB from "./config/db.js";
+import pool from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
-import productRouter from "./routes/productRoutes.js"
+import productRouter from "./routes/productRoutes.js";
 
 const app = express();
 app.use(express.json());
 
 dotenv.config();
-conectarDB();
+
 // Lista de las url permitidas, en este caso del front end
 const whitelist = [process.env.FRONTEND_URL];
 const corsOptions = {

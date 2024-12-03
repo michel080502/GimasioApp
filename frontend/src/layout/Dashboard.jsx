@@ -25,7 +25,7 @@ function Dashboard() {
         <main className="flex-1 overflow-y-auto">
           <div className=" md:pl-[18%]">
             {/* Mostrar la página de contenido */}
-            {auth?._id ? <Outlet /> : <Navigate to="/" />}
+            {auth?.id ? <Outlet /> : <Navigate to="/" />}
           </div>
         </main>
       </div>
