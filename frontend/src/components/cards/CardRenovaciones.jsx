@@ -1,7 +1,7 @@
 import { BiSolidWrench  } from "react-icons/bi";
 const CardRenovaciones = () => {
   return (
-	<div className="rounded-xl bg-white p-4 shadow-lg shadow-gray-500/50">
+	<div className="  rounded-xl bg-white p-4 shadow-lg shadow-gray-500/50">
 		<div className="border-b-2 border-red-600 flex justify-between py-2">
 			<div>
 				<h3 className="text-xl font-bold">Proximas renovaciones</h3>

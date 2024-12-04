@@ -1,22 +1,35 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import { Server as SocketServer } from "socket.io";
+import http from "http"; // Importar el servidor HTTP
 import pool from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import productRouter from "./routes/productRoutes.js";
 
-const app = express();
-app.use(express.json());
-
 dotenv.config();
+const app = express();
+const server = http.createServer(app); // Crear el servidor HTTP
+const io = new SocketServer(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+});
 
-// Lista de las url permitidas, en este caso del front end
+io.on('connection', socket => {
+  console.log('Cliente conectado');
+  socket.on('message', (data) =>{
+    console.log(data);
+  })
+})
+
+app.use(express.json());
 const whitelist = [process.env.FRONTEND_URL];
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) {
-      //for para las consultas de post-man
       return callback(null, true);
     }
     if (whitelist.indexOf(origin) !== -1) {
@@ -28,7 +41,11 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.use(cors(corsOptions));
+// Middleware para Socket.IO
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/cliente", clientRoutes);
@@ -36,6 +53,6 @@ app.use("/api/producto", productRouter);
 
 const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Servidor funcionando en el puerto ${PORT}`);
 });

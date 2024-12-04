@@ -3,7 +3,7 @@ import { uploadImage, deleteImage } from "../helpers/cloudinary.js";
 // fs es un modulo que extiende las capacidades de FileSystem a recibir promesas
 import fs from "fs-extra";
 
-const crear = async (req, res) => {
+const crear = async (req, res, next) => {
   const {
     nombre,
     apellidoPaterno,
@@ -14,7 +14,6 @@ const crear = async (req, res) => {
     matricula,
   } = req.body;
 
-  // Verificar si ya existe un cliente con la misma matrícula
   const query = "SELECT * FROM clientes WHERE matricula = $1 OR email = $2";
   try {
     const { rows: clienteExiste } = await pool.query(query, [matricula, email]);
@@ -25,7 +24,6 @@ const crear = async (req, res) => {
       return res.status(400).json({ msg: mensajeError });
     }
 
-    // Manejar la imagen si existe
     let img = {};
     if (req.files?.img) {
       const resultImg = await uploadImage(req.files.img.tempFilePath);
@@ -38,10 +36,10 @@ const crear = async (req, res) => {
 
     const insertQuery = `
 	 	INSERT INTO clientes (nombre, apellido_paterno, apellido_materno, telefono, nacimiento, email, matricula, img_public_id, img_secure_url) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
 	  `;
 
-    await pool.query(insertQuery, [
+    const { rows: nuevoCliente } = await pool.query(insertQuery, [
       nombre,
       apellidoPaterno,
       apellidoMaterno,
@@ -53,14 +51,19 @@ const crear = async (req, res) => {
       img.secure_url || null,
     ]);
 
+    // Emitir el nuevo cliente usando Socket.IO
+    req.io.emit("nuevo-cliente", nuevoCliente[0]);
+
     res.json({
       msg: "Cliente registrado exitosamente",
+      cliente: nuevoCliente[0],
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Error al registrar el cliente" });
   }
 };
+
 
 const update = async (req, res) => {
   const { id } = req.params;

@@ -199,7 +199,7 @@ const FormUpdate = ({id}) => {
 }
 
 FormUpdate.propTypes = {
-	id: PropTypes.string
+	id: PropTypes.number
 }
 
 export default FormUpdate
