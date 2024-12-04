@@ -1,7 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import fileUpload from "express-fileupload";
 import pool from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
@@ -30,13 +29,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(cors(corsOptions));
-// Cargar archivos
-app.use(
-  fileUpload({
-    useTempFiles: true,
-    tempFileDir: "./uploads",
-  })
-);
+
 app.use("/api/admin", adminRoutes);
 app.use("/api/cliente", clientRoutes);
 app.use("/api/producto", productRouter);
