@@ -21,6 +21,7 @@ CREATE TABLE clientes (
     nacimiento DATE NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     matricula VARCHAR(50) NOT NULL UNIQUE,
+    estado VARCHAR(20) DEFAULT 'nuevo',
     img_public_id VARCHAR(255),
     img_secure_url VARCHAR(255),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP

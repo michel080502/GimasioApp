@@ -47,7 +47,9 @@ const TablaProductos = ({ openModal }) => {
       <div className="my-4 p-3 bg-white rounded-lg">
         <div className="p-2 grid md:grid-cols-4  md:gap-5">
           <div className=" grid grid-cols-3 md:flex  justify-between">
-            <h1 className="col-span-2 p-2 font-bold text-xl">Todos los productos</h1>
+            <h1 className="col-span-2 p-2 font-bold text-xl">
+              Todos los productos
+            </h1>
             <div className="flex md:hidden w-full md:w-0 items-center">
               <button className="w-full p-1 hover:bg-slate-900 hover:bg-opacity-25 hover:scale-125 transition-all duration-300">
                 <RiFileExcel2Fill className="m-auto text-2xl " />
@@ -57,7 +59,7 @@ const TablaProductos = ({ openModal }) => {
               </button>
             </div>
           </div>
-          
+
           <div className=" md:col-span-2">
             <form className="flex">
               <input
