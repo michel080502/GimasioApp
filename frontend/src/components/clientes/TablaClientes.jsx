@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useSocket from "../../hooks/useSocket"; // Importa el hook
 import clienteAxios from "../../config/axios";
 import PropTypes from "prop-types";
-
 
 import { HiSearchCircle } from "react-icons/hi";
 import { RiFileExcel2Fill } from "react-icons/ri";
@@ -10,26 +9,61 @@ import { FaFilter, FaUserEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import ConfirmDialogDelete from "../ui/confirmDialogDelete";
 import MenuExport from "../ui/MenuExport";
+import exportToExcel from "../../utils/exportToExcel";
 
-const TablaClientes = ({ openModal }) => {
-  const [clientes, setClientes] = useState([]);
-  const [loading, setLoading] = useState(true);
+const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
   const [deleteCliente, setDeleteCliente] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [optionsExport, setOptionsExport] = useState(null);
 
- 
-  const filteredClientes = clientes.filter((cliente) =>
-    `${cliente.nombre} ${cliente.apellido_paterno} ${cliente.apellido_materno} ${cliente.matricula} ${cliente.telefono}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+  // Combinar filtros de búsqueda y estado
+  const filteredClientes = clientes
+    .filter((cliente) => {
+      // Filtro por estado basado en filterType
+      if (filterType === "nuevo") return cliente.estado === "nuevo";
+      if (filterType === "activo") return cliente.estado === "activo";
+      if (filterType === "vencido") return cliente.estado === "vencido";
+      return true; // Mostrar todos si no hay filtro específico
+    })
+    .filter((cliente) => {
+      // Filtro de búsqueda
+      return `${cliente.nombre} ${cliente.apellido_paterno} ${cliente.apellido_materno} ${cliente.matricula} ${cliente.telefono}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+    });
   const toggleOptionsExport = () => {
     setOptionsExport((prev) => !prev);
   };
 
   const handleDownload = () => {
-    console.log("Exportando...");
+    const headers = [
+      "#",
+      "Nombre",
+      "Apellido Paterno",
+      "Apellido Materno",
+      "Estado",
+      "Matrícula",
+      "Teléfono",
+      "Email",
+    ];
+  
+    const formattedData = filteredClientes.map((cliente, index) => ({
+      "#": index + 1,
+      Nombre: cliente.nombre,
+      Apellido_Paterno: cliente.apellido_paterno,
+      Apellido_Materno: cliente.apellido_materno,
+      Estado: cliente.estado,
+      Matrícula: cliente.matricula,
+      Teléfono: cliente.telefono,
+      Email: cliente.email,
+    }));
+  
+    exportToExcel({
+      fileName: "Reporte_Clientes",
+      gymName: "Gimnasio SPARTANS",
+      data: formattedData,
+      tableHeaders: headers,
+    });
     setOptionsExport(false);
   };
 
@@ -49,24 +83,7 @@ const TablaClientes = ({ openModal }) => {
     });
   };
 
-  // Traer los clientes al cargar componente
-  useEffect(() => {
-    const getClientes = async () => {
-      try {
-        const { data } = await clienteAxios.get("/cliente/");
-        setClientes(data);
-      } catch (error) {
-        console.log("Error al obtener clientes", error);
-        setClientes([]); // tabla no quede indefinida
-      }
-
-      setLoading(false);
-    };
-
-    getClientes();
-  }, []);
-
-  // Escuchar el evento "nuevo-cliente" mediante el hook useSocket
+  // Escuchar el evento "nuevo-cliente" mediante el hook
   useSocket({
     "nuevo-cliente": handleNewClient, // Agregar el nuevo cliente a la lista
   });
@@ -85,15 +102,14 @@ const TablaClientes = ({ openModal }) => {
     }
   };
 
-  if (loading) return <p>Cargando</p>;
-
   return (
     <div className="my-4 p-3 bg-white rounded-lg">
-      <div className="p-2 grid md:grid-cols-4 md:gap-5">
-        <div className=" grid grid-cols-3 md:flex  justify-between">
-          <h1 className="col-span-2 p-2 font-bold text-xl">
-            Todos los clientes
-          </h1>
+      <div className="p-2 grid md:grid-cols-4 md:gap-5 items-center">
+        <div className=" grid grid-cols-3 md:flex   justify-between">
+          <div className="col-span-2 p-2  ">
+            <h1 className="font-bold text-xl">Todos los clientes</h1>
+          </div>
+
           <div className="flex md:hidden w-full md:w-0 items-center">
             <button className="w-full p-1 hover:bg-slate-900 hover:bg-opacity-25 hover:scale-125 transition-all duration-300">
               <RiFileExcel2Fill className="m-auto text-2xl " />
@@ -130,10 +146,10 @@ const TablaClientes = ({ openModal }) => {
           </button>
           {/* Recuadro con opciones de exportación */}
           {optionsExport && (
-             <MenuExport
-             onDownload={handleDownload}
-             onSendReport={handleSendReport}
-           />
+            <MenuExport
+              onDownload={handleDownload}
+              onSendReport={handleSendReport}
+            />
           )}
           <button className="scale-hover-10 w-full gap-2 px-3 flex  justify-center items-center hover:bg-zinc-600 hover:bg-opacity-20">
             <FaFilter />
@@ -156,77 +172,98 @@ const TablaClientes = ({ openModal }) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 text-center items-center">
-            {filteredClientes.map((cliente, index) => (
-              <tr
-                key={cliente.id}
-                className={`hover:bg-gray-100 ${
-                  cliente.animating ? "bg-green-300 animate-fadeIn" : ""
-                }`}
-                onAnimationEnd={() => {
-                  // Después de que termine la animación, quitamos la propiedad animating
-                  setClientes((prevClientes) =>
-                    prevClientes.map((cl) =>
-                      cl.id === cliente.id ? { ...cl, animating: false } : cl
-                    )
-                  );
-                }}
-              >
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  {index + 1}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 ">
-                  <img
-                    className="w-16 rounded-full ring-2 ring-red-800 m-auto"
-                    src={cliente.img_secure_url}
-                    alt="profile"
-                  />
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  {cliente.nombre} {cliente.apellido_paterno}{" "}
-                  {cliente.apellido_materno}
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  {cliente.estado}
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  {cliente.matricula}
-                </td>
-
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  {cliente.telefono}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  {cliente.email}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 h-full">
-                  <div className="flex items-center justify-center gap-4 h-full">
-                    <button
-                      className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
-                      onClick={() => {
-                        openModal("editar", cliente.id);
-                      }}
-                    >
-                      <FaUserEdit className="text-3xl" />
-                    </button>
-                    <button
-                      className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
-                      onClick={() => {
-                        toggleDelete(cliente.id);
-                      }}
-                    >
-                      <MdDelete className="text-3xl" />
-                    </button>
-                    {deleteCliente === cliente.id && (
-                      <ConfirmDialogDelete
-                        message={`¿Seguro que deseas eliminar a ${cliente.nombre} ${cliente.apellido_paterno}?`}
-                        onCancel={() => setDeleteCliente(null)}
-                        onConfirm={() => handleDelete(cliente.id)}
-                      />
-                    )}
-                  </div>
+            {filteredClientes.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="8"
+                  className="px-6 py-4 text-center text-gray-600 text-lg font-semibold"
+                >
+                  No hay datos que mostrar.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredClientes.map((cliente, index) => (
+                <tr
+                  key={cliente.id}
+                  className={`hover:bg-gray-100 ${
+                    cliente.animating ? "bg-green-300 animate-fadeIn" : ""
+                  }`}
+                  onAnimationEnd={() => {
+                    // Después de que termine la animación, quitamos la propiedad animating
+                    setClientes((prevClientes) =>
+                      prevClientes.map((cl) =>
+                        cl.id === cliente.id ? { ...cl, animating: false } : cl
+                      )
+                    );
+                  }}
+                >
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {index + 1}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700 ">
+                    <img
+                      className="w-16 rounded-full ring-2 ring-red-800 m-auto"
+                      src={cliente.img_secure_url}
+                      alt="profile"
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {cliente.nombre} {cliente.apellido_paterno}{" "}
+                    {cliente.apellido_materno}
+                  </td>
+                  <td
+                    className={`${
+                      cliente.estado === "nuevo"
+                        ? "bg-blue-400"
+                        : cliente.estado === "activo"
+                        ? "bg-green-400"
+                        : cliente.estado === "vencido"
+                        ? "bg-red-400"
+                        : ""
+                    } px-6 bg-opacity-30 py-4 text-sm font-semibold text-gray-700`}
+                  >
+                    {cliente.estado}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {cliente.matricula}
+                  </td>
+
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {cliente.telefono}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {cliente.email}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700 h-full">
+                    <div className="flex items-center justify-center gap-4 h-full">
+                      <button
+                        className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
+                        onClick={() => {
+                          openModal("editar", cliente.id);
+                        }}
+                      >
+                        <FaUserEdit className="text-3xl" />
+                      </button>
+                      <button
+                        className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
+                        onClick={() => {
+                          toggleDelete(cliente.id);
+                        }}
+                      >
+                        <MdDelete className="text-3xl" />
+                      </button>
+                      {deleteCliente === cliente.id && (
+                        <ConfirmDialogDelete
+                          message={`¿Seguro que deseas eliminar a ${cliente.nombre} ${cliente.apellido_paterno}?`}
+                          onCancel={() => setDeleteCliente(null)}
+                          onConfirm={() => handleDelete(cliente.id)}
+                        />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -236,6 +273,9 @@ const TablaClientes = ({ openModal }) => {
 
 TablaClientes.propTypes = {
   openModal: PropTypes.func,
+  clientes: PropTypes.array,
+  setClientes: PropTypes.func,
+  filterType: PropTypes.string,
 };
 
 export default TablaClientes;

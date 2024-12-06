@@ -32,7 +32,6 @@ function Login() {
 
 		try {
 			const { data } = await clienteAxios.post('/admin/login', { email, password });
-			console.log(data.token);
 			localStorage.setItem('token', data.token);
 			setAuth(data);
 			navigate('/admin')

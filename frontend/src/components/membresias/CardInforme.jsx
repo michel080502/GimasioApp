@@ -3,6 +3,7 @@ import { PiIdentificationCardFill } from "react-icons/pi";
 import PropTypes from "prop-types";
 
 const CardInforme = ({ typeTable }) => {
+  
   return (
     <>
       <div className="p-2 bg-white rounded-md shadow-lg shadow-gray-500/50 col-span-2">

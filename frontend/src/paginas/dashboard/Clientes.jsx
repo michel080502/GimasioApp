@@ -2,18 +2,44 @@ import { IoMdAddCircle, IoMdCloseCircle } from "react-icons/io";
 import Modal from "../../components/Modal";
 import CardInforme from "../../components/clientes/CardInforme";
 import TablaClientes from "../../components/clientes/TablaClientes";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import clienteAxios from "../../config/axios";
 import FormRegistro from "../../components/clientes/FormRegistro";
 import FormUpdate from "../../components/clientes/FormUpdate";
 
 const Clientes = () => {
+  const [clientes, setClientes] = useState([]);
+  const [filterType, setFilterType] = useState("");
+  const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+
+  // Traer los clientes al cargar componente
+  useEffect(() => {
+    const getClientes = async () => {
+      try {
+        const { data } = await clienteAxios.get("/cliente/");
+        setClientes(data);
+      } catch (error) {
+        console.log("Error al obtener clientes", error);
+        setClientes([]); // tabla no quede indefinida
+      }
+
+      setLoading(false);
+    };
+
+    getClientes();
+  }, []);
+
+  const handleFilterChange = (type) => {
+    setFilterType(type); // Actualizar el estado con el filtro seleccionado
+  };
+
   const openModal = (modalName, id = null) => {
     setActiveModal(modalName), setSelectedId(id);
   };
   const closeModal = () => setActiveModal(null);
-
+  if (loading) return <p>Cargando....</p>;
   return (
     <div className="p-5">
       <div className="p-4 flex justify-between items-center">
@@ -31,9 +57,9 @@ const Clientes = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4 ">
-        <CardInforme />
+         <CardInforme clientes={clientes} typeData={handleFilterChange} /> 
       </div>
-      <TablaClientes openModal={openModal} />
+      <TablaClientes clientes={clientes} setClientes={setClientes} openModal={openModal} filterType={filterType} />
 
       {/* Modal de registro */}
       {activeModal === "registrar" && (
