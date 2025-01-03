@@ -5,7 +5,8 @@ import Alerta from "../components/Alerta";
 
 const Registrar = () => {
   const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
+  const [apellidoPaterno, setApellidoPaterno] = useState("");
+  const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [password, setPassword] = useState("");
@@ -14,7 +15,7 @@ const Registrar = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if ([nombre, apellido, telefono, email, password, password2].includes("")) {
+    if ([nombre, apellidoPaterno, apellidoMaterno, telefono, email, password, password2].includes("")) {
       setAlerta({ msg: "Hay campos vacios", error: true });
       return;
     }
@@ -37,7 +38,8 @@ const Registrar = () => {
     try {
       await clienteAxios.post(`/admin/`, {
         nombre,
-        apellido,
+        apellidoPaterno,
+        apellidoMaterno,
         email,
         telefono,
         password,
@@ -75,7 +77,7 @@ const Registrar = () => {
         
         <form
           autoComplete="off"
-          className=" font-medium  flex flex-col gap-7 "
+          className=" font-medium  flex flex-col gap-3 "
           onSubmit={handleSubmit}
         >
           {
@@ -85,9 +87,9 @@ const Registrar = () => {
           <p className="text-gray-500 text-center">
             Ingresa tu datos para crear el perfil de administración
           </p>
-          <div className="md:grid md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <label className="font-bold">Nombre</label>
+          <div className="md:grid md:grid-cols-2 gap-2">
+            <div className="grid gap-2 col-span-2 my-1">
+              <label className="font-bold">Nombre(s):</label>
               <input
                 className="border font-normal border-gray-600 rounded-xl p-2"
                 placeholder="Nombre"
@@ -95,13 +97,22 @@ const Registrar = () => {
                 onChange={(e) => setNombre(e.target.value)}
               />
             </div>
-            <div className="grid gap-1 ">
-              <label className="font-bold">Apellidos</label>
+            <div className="grid gap-1 my-2">
+              <label className="font-bold">Apellido Paterno:</label>
               <input
                 className="border font-normal border-gray-600 rounded-xl p-2"
-                placeholder="Apellido"
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                placeholder="Apellido paterno"
+                value={apellidoPaterno}
+                onChange={(e) => setApellidoPaterno(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1 ">
+              <label className="font-bold">Apellido Materno:</label>
+              <input
+                className="border font-normal border-gray-600 rounded-xl p-2"
+                placeholder="Apellido materno"
+                value={apellidoMaterno}
+                onChange={(e) => setApellidoMaterno(e.target.value)}
               />
             </div>
           </div>
@@ -156,7 +167,7 @@ const Registrar = () => {
           </button>
         </form>
         <nav className="lg:flex lg:justify-center text-center" >
-          <p className="m-5 text-gray-600">
+          <p className="m-2 text-gray-600">
             ¿Quieres iniciar sesión?{" "}
             <span className="font-semibold text-gray-800">
               <Link to="/"> Ingresa aqui</Link>

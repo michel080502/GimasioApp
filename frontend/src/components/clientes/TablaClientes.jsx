@@ -5,49 +5,43 @@ import PropTypes from "prop-types";
 
 import { HiSearchCircle } from "react-icons/hi";
 import { RiFileExcel2Fill } from "react-icons/ri";
-import { FaFilter, FaUserEdit } from "react-icons/fa";
+import { FaUserEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import ConfirmDialogDelete from "../ui/confirmDialogDelete";
 import MenuExport from "../ui/MenuExport";
 import exportToExcel from "../../utils/exportToExcel";
 
-const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
+const TablaClientes = ({ clientes, setClientes, openModal }) => {
   const [deleteCliente, setDeleteCliente] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [optionsExport, setOptionsExport] = useState(null);
 
   // Combinar filtros de búsqueda y estado
-  const filteredClientes = clientes
-    .filter((cliente) => {
-      // Filtro por estado basado en filterType
-      if (filterType === "nuevo") return cliente.estado === "nuevo";
-      if (filterType === "activo") return cliente.estado === "activo";
-      if (filterType === "vencido") return cliente.estado === "vencido";
-      return true; // Mostrar todos si no hay filtro específico
-    })
-    .filter((cliente) => {
-      // Filtro de búsqueda
-      return `${cliente.nombre} ${cliente.apellido_paterno} ${cliente.apellido_materno} ${cliente.matricula} ${cliente.telefono}`
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-    });
+  const filteredClientes = clientes.filter((cliente) => {
+    // Filtro de búsqueda
+    return `${cliente.nombre} ${cliente.apellido_paterno} ${cliente.apellido_materno} ${cliente.matricula} ${cliente.telefono}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+  });
+
   const toggleOptionsExport = () => {
     setOptionsExport((prev) => !prev);
   };
 
-  const handleDownload = () => {
-    const headers = [
-      "#",
-      "Nombre",
-      "Apellido Paterno",
-      "Apellido Materno",
-      "Estado",
-      "Matrícula",
-      "Teléfono",
-      "Email",
-    ];
-  
-    const formattedData = filteredClientes.map((cliente, index) => ({
+  // Definir los encabezados fuera de las funciones
+  const headers = [
+    "#",
+    "Nombre",
+    "Apellido Paterno",
+    "Apellido Materno",
+    "Estado",
+    "Matrícula",
+    "Teléfono",
+    "Email",
+  ];
+
+  const generateExcelData = (filteredClientes) => {
+    return filteredClientes.map((cliente, index) => ({
       "#": index + 1,
       Nombre: cliente.nombre,
       Apellido_Paterno: cliente.apellido_paterno,
@@ -57,19 +51,80 @@ const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
       Teléfono: cliente.telefono,
       Email: cliente.email,
     }));
-  
-    exportToExcel({
-      fileName: "Reporte_Clientes",
-      gymName: "Gimnasio SPARTANS",
-      data: formattedData,
-      tableHeaders: headers,
-    });
-    setOptionsExport(false);
   };
 
-  const handleSendReport = () => {
-    console.log("Enviando reporte...");
-    setOptionsExport(false);
+  const handleDownload = async () => {
+    try {
+      const formattedData = generateExcelData(filteredClientes);
+      const buffer = await exportToExcel({
+        data: formattedData,
+        tableHeaders: headers,
+      });
+
+      const currentDate = new Date();
+      const formattedDate = currentDate
+        .toLocaleString("es-MX", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+        .replace(/[^\w\s]/gi, "-"); // Reemplazar caracteres no válidos
+
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `reporte_clientes_${formattedDate}.xlsx`;
+      link.click();
+
+      setOptionsExport(false);
+    } catch (error) {
+      console.error("Error al generar el reporte de Excel:", error);
+    }
+  };
+
+  const handleSendReport = async () => {
+    try {
+      // Generar la fecha en el formato deseado
+      const currentDate = new Date();
+      const formattedDate = currentDate
+        .toLocaleString("es-MX", {
+          dateStyle: "short",
+          timeStyle: "short",
+        })
+        .replace(/\//g, "-")
+        .replace(/:/g, "_"); // Formato: "dd-MM-yy_HH-mm"
+
+      const formattedData = generateExcelData(filteredClientes);
+      const buffer = await exportToExcel({
+        data: formattedData,
+        tableHeaders: headers,
+      });
+
+      // Crear FormData
+      const formData = new FormData();
+
+      // Crear un Blob con el contenido del archivo
+      const fileBlob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const fileName = `reporte_clientes_${formattedDate}.xlsx`;
+
+      formData.append("file", fileBlob, fileName);
+
+      const { data } = await clienteAxios.post("/reporte-clientes/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log(data);
+      setOptionsExport(false);
+    } catch (error) {
+      console.error("Error al generar o enviar el reporte:", error);
+    }
   };
 
   const handleNewClient = (nuevoCliente) => {
@@ -104,22 +159,19 @@ const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
 
   return (
     <div className="my-4 p-3 bg-white rounded-lg">
-      <div className="p-2 grid md:grid-cols-4 md:gap-5 items-center">
+      <div className="p-2 grid md:grid-cols-5 md:gap-5 items-center">
         <div className=" grid grid-cols-3 md:flex   justify-between">
           <div className="col-span-2 p-2  ">
             <h1 className="font-bold text-xl">Todos los clientes</h1>
           </div>
 
           <div className="flex md:hidden w-full md:w-0 items-center">
-            <button className="w-full p-1 hover:bg-slate-900 hover:bg-opacity-25 hover:scale-125 transition-all duration-300">
-              <RiFileExcel2Fill className="m-auto text-2xl " />
-            </button>
-            <button className="w-full p-1 hover:bg-slate-900 hover:bg-opacity-25 hover:scale-125 transition-all duration-300">
-              <FaFilter className="m-auto text-2xl" />
+            <button className="w-full m-2 bg-black rounded-lg text-white hover:bg-red-900  hover:scale-110 p-2 transition-all duration-300">
+              <RiFileExcel2Fill className="m-auto text-2xl" />
             </button>
           </div>
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-3">
           <form className="flex">
             <input
               type="text"
@@ -136,11 +188,11 @@ const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
             </button>
           </form>
         </div>
-        <div className="hidden md:flex divide-x-4 h-auto items-center text-lg">
+        <div className="hidden md:flex justify-center divide-x-4 h-auto items-center ">
           <button
             onClick={toggleOptionsExport}
             type="button"
-            className="scale-hover-10 w-full gap-2 px-3  flex  justify-center items-center hover:bg-zinc-600 hover:bg-opacity-20"
+            className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
           >
             <RiFileExcel2Fill /> Exportar
           </button>
@@ -151,10 +203,6 @@ const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
               onSendReport={handleSendReport}
             />
           )}
-          <button className="scale-hover-10 w-full gap-2 px-3 flex  justify-center items-center hover:bg-zinc-600 hover:bg-opacity-20">
-            <FaFilter />
-            Filtro
-          </button>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -164,10 +212,10 @@ const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
               <th className="px-5 py-2 text-gray-700 uppercase">#</th>
               <th className="px-5 py-2 text-gray-700 uppercase">Foto</th>
               <th className="px-5 py-2 text-gray-700 uppercase">Nombre</th>
-              <th className="px-5 py-2 text-gray-700 uppercase">Estado</th>
-              <th className="px-5 py-2 text-gray-700 uppercase">Matricula</th>
               <th className="px-5 py-2 text-gray-700 uppercase">Telefono</th>
+              <th className="px-5 py-2 text-gray-700 uppercase">Nacimiento</th>
               <th className="px-5 py-2 text-gray-700 uppercase">Email</th>
+              <th className="px-5 py-2 text-gray-700 uppercase">Matricula</th>
               <th className="px-5 py-2 text-gray-700 uppercase">Acciones</th>
             </tr>
           </thead>
@@ -212,29 +260,21 @@ const TablaClientes = ({ clientes, setClientes, openModal, filterType }) => {
                     {cliente.apellido_materno}
                   </td>
                   <td
-                    className={`${
-                      cliente.estado === "nuevo"
-                        ? "bg-blue-400"
-                        : cliente.estado === "activo"
-                        ? "bg-green-400"
-                        : cliente.estado === "vencido"
-                        ? "bg-red-400"
-                        : ""
-                    } px-6 bg-opacity-30 py-4 text-sm font-semibold text-gray-700`}
+                    className={`px-6 bg-opacity-30 py-4 text-sm font-semibold text-gray-700`}
                   >
-                    {cliente.estado}
+                    {cliente.telefono}
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                    {cliente.matricula}
+                    {cliente.nacimiento}
                   </td>
 
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                    {cliente.telefono}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
                     {cliente.email}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 h-full">
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {cliente.matricula}
+                  </td>
+                  <td className="px-6 py-4 text-sm h-full">
                     <div className="flex items-center justify-center gap-4 h-full">
                       <button
                         className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"

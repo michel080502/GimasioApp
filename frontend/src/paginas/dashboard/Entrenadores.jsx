@@ -3,6 +3,8 @@ import { IoMdCloseCircle } from "react-icons/io";
 import Modal from "../../components/Modal";
 import { useState } from "react"
 import TablaEntrenadores from "../../components/entrenadores/TablaEntrenadores";
+import FormRegistro from "../../components/entrenadores/FormRegistro";
+import FormUpdate from "../../components/entrenadores/FormUpdate"
 
 const Entrenadores = () => {
   const [ activeModal, setActiveModal ] = useState(null);
@@ -39,7 +41,7 @@ const Entrenadores = () => {
             <IoMdCloseCircle className="text-3xl" />
           </button>
         </div>
-        {/* Espacio para form */}
+        <FormRegistro />
       </Modal>
     )}
     {/* Modal de registro */}
@@ -53,9 +55,7 @@ const Entrenadores = () => {
           <IoMdCloseCircle className="text-3xl" />
         </button>
       </div>
-      
-        {/* Form Update */}
-      
+         <FormUpdate />
     </Modal>
   )}
   </div>

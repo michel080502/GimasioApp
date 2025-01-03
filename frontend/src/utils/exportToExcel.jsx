@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 
-const exportToExcel = async ({ fileName, gymName, data, tableHeaders }) => {
+const exportToExcel = async ({ data, tableHeaders }) => {
   // Crear un nuevo libro de trabajo
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Reporte");
@@ -12,7 +12,7 @@ const exportToExcel = async ({ fileName, gymName, data, tableHeaders }) => {
     timeStyle: "short",
   });
 
-  worksheet.addRow([gymName]).font = { bold: true, size: 16 };
+  worksheet.addRow(["Gym Spartans"]).font = { bold: true, size: 18 };
   worksheet.addRow([`Reporte generado el: ${formattedDate}`]).font = {
     italic: true,
     size: 12,
@@ -41,13 +41,9 @@ const exportToExcel = async ({ fileName, gymName, data, tableHeaders }) => {
     worksheet.getColumn(index + 1).width = 20;
   });
 
-  // Guardar el archivo
+  // Retornar el buffer
   const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `${fileName}_${formattedDate}.xlsx`;
-  link.click();
+  return buffer;
 };
 
 export default exportToExcel;

@@ -12,9 +12,9 @@ const SideBar = ({ admin }) => {
 	const [ showMenu, setShowMenu ] = useState(false);
 	const { cerrarSesion } = useAuth();
 	return (
-	<>
+	<div className="fixed">
 		<aside 
-		className={`bg-zinc-900 h-[100%] flex flex-col fixed  md:static w-[80%] md:w-[40%] lg:w-full transition-all duration-500
+		className={`bg-zinc-900 flex flex-col h-screen md:h-auto  md:w-64 w-60 fixed md:static transition-all duration-500
 			${showMenu ? "left-0" : "-left-full"}`}>
 			<div className="flex flex-col items-center justify-center p-8 gap-4"> 
 				<img 
@@ -28,13 +28,13 @@ const SideBar = ({ admin }) => {
 					Cerrar sesión</button>
 			</div>
 			<nav className=" bg-zinc-800 rounded-tr-[40px] h-full flex flex-col justify-between">
-				<div>
+				<div className="flex-1">
 					<NavLink 
 						to="/admin" 
 						end
 						className={({ isActive }) => 
 						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
-						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px]' : 'hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
+						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
 					}>
 						<RiDashboardFill /> Dashboard
 						
@@ -44,31 +44,32 @@ const SideBar = ({ admin }) => {
 						to="/admin/clientes" 
 						className={({ isActive }) => 
 						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
-						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px]' : 'hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
+						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
 					}>
 						<FaUsers /> Clientes
-					</NavLink>
-					<NavLink 
-						to="/admin/productos" 
-						className={({ isActive }) => 
-						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
-						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px]' : 'hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
-					}>
-						<FaStoreAlt /> Productos
 					</NavLink>
 					<NavLink 
 						to="/admin/membresias" 
 						className={({ isActive }) => 
 						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
-						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px]' : 'hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
+						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
 					}>
 						<BsFillPassportFill /> Membresias
 					</NavLink>
 					<NavLink 
+						to="/admin/productos" 
+						className={({ isActive }) => 
+						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
+						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
+					}>
+						<FaStoreAlt /> Productos
+					</NavLink>
+					
+					<NavLink 
 						to="/admin/entrenadores" 
 						className={({ isActive }) => 
 						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
-						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px]' : 'hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
+						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
 					}>
 						<CgGym /> Entrenadores
 					</NavLink>
@@ -76,19 +77,22 @@ const SideBar = ({ admin }) => {
 						to="/admin/ventas" 
 						className={({ isActive }) => 
 						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
-						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px]' : 'hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
+						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
 					}>
 						<RiMoneyDollarCircleFill /> Ventas
 					</NavLink>
 				</div>
+				
 				<NavLink 
 						to="/admin/configuracion" 
 						className={({ isActive }) => 
-						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
-						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px]' : 'hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
+						`flex font-bold items-center gap-5 bottom-0  rounded-md p-3 text-white 
+						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
 					}>
 					<RiSettings3Fill /> Configuración
 				</NavLink>
+				
+				
 			</nav>
 		</aside>
 		{/* Boton para cerrar el sidebar en movil */}
@@ -99,7 +103,7 @@ const SideBar = ({ admin }) => {
 			onClick={() => setShowMenu(!showMenu)}>
 			{showMenu ? <RiCloseLargeFill /> : <CgDetailsMore /> }
 		</button>
-	</>
+	</div>
 	)
 }
 
