@@ -1,43 +1,18 @@
-import { useState, useEffect } from "react";
 import { MdAddPhotoAlternate, MdAddAPhoto } from "react-icons/md";
 import { FaRegFileImage } from "react-icons/fa";
+
 import Alerta from "../Alerta";
 import Camera from "../ui/Camera";
-const FormRegistro = () => {
-  const [nombre, setNombre] = useState("");
-  const [marca, setMarca] = useState("");
-  const [categoria, setCategoria] = useState("");
-  const [categorias, setCategorias] = useState([]); // Almacena las categorías obtenidas
-  const [stock, setStock] = useState(0);
-  const [precio, setPrecio] = useState(0.0);
-  const [descuento, setDescuento] = useState(0.0);
-  const [total, setTotal] = useState(0.0);
 
+import { useState } from "react";
+
+const FormUpdate = () => {
   const [file, setFile] = useState(null);
-  const [alerta, setAlerta] = useState({ msg: "", error: false });
 
+  const [alerta, setAlerta] = useState({ msg: "", error: false });
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [showOptions, setShowOptions] = useState(null);
-
-  // Simula la carga de categorías desde la base de datos
-  useEffect(() => {
-    const obtenerCategorias = async () => {
-      try {
-        // Reemplaza este array con la llamada a tu API
-        const data = [
-          { id: 1, nombre: "Proteína" },
-          { id: 2, nombre: "Vitaminas" },
-          { id: 3, nombre: "Accesorios" },
-        ];
-        setCategorias(data); // Almacena las categorías
-      } catch (error) {
-        console.error("Error al obtener categorías:", error);
-      }
-    };
-
-    obtenerCategorias();
-  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,27 +20,9 @@ const FormRegistro = () => {
       setAlerta({ msg: "Por favor selecciona imagen", error: true });
       return;
     }
-    if ([nombre, marca, categoria].includes("")) {
-      setAlerta({ msg: "Por completa campos faltantes", error: true });
-      return;
-    }
-
-    if ([stock, precio, descuento, total] == 0) {
-      setAlerta({ msg: "Por ingresa el total", error: true });
-      return;
-    }
-
     setAlerta({ msg: "Ok", error: false });
   };
-  const generarTotal = () => {
-    if (precio && descuento != 0) {
-      const suma = precio - descuento;
-      setTotal(suma);
-    } else {
-      setAlerta({ msg: "Necesitas precio y descuento", error: true });
-    }
-  };
-
+  const { msg } = alerta;
   const toggleOptions = () => {
     setShowOptions((prev) => !prev);
   };
@@ -145,14 +102,11 @@ const FormRegistro = () => {
       }
     }
   };
-
-  const { msg } = alerta;
-
   return (
     <>
       <form
         onSubmit={handleSubmit}
-        className=" border pb-2 grid gap-2 justify-center max-w-screen-sm  overflow-y-auto"
+        className=" border p-2 grid justify-center overflow-y-auto"
       >
         {msg && <Alerta alerta={alerta} />}
         <div className="m-5 grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 relative">
@@ -172,26 +126,7 @@ const FormRegistro = () => {
                 <MdAddPhotoAlternate className="w-full h-full text-gray-300 hover:text-gray-500" />
               )}
             </button>
-            <button
-              type="button"
-              className="text-center text-3xl w-48  font-extrabold  justify-center "
-              onClick={generarTotal}
-            >
-              <p className="flex gap-1 absolut justify-center">
-                $
-                <input
-                  className="w-28 text-center rounded"
-                  type="text"
-                  value={total}
-                  placeholder="200.00"
-                  disabled
-                />
-              </p>
-
-              <p className="text-sm py-2 text-gray-500 hover:text-gray-600">
-                Presiona para calcular total
-              </p>
-            </button>
+              <p className="text-center font-medium">Foto del entrenador</p>
             {/* Opcion para cargar imagen */}
             {showOptions && (
               <div className="absolute top-10 md:top-1/2 mt-2 bg-white border rounded-lg shadow-lg w-48 z-10">
@@ -238,94 +173,54 @@ const FormRegistro = () => {
               onClose={() => setIsCameraOpen(false)}
             />
           )}
-
           <div className="order-1 col-span-2 grid gap-2 grid-cols-2">
             <div className=" grid col-span-2">
-              <label className=" p-1 font-bold">Nombre</label>
+              <label className=" font-bold">Nombre</label>
               <input
                 className="border p-2 rounded-lg"
                 type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="ejm: Proteina en polvo"
+                placeholder="ejm: Carlos Belcast"
               />
             </div>
-            <div className=" grid col-span-2 ">
-              <label className=" p-1 font-bold">Marca</label>
+            <div className=" grid ">
+              <label className=" p-1 font-bold">Apellido Paterno</label>
               <input
                 className="border p-2 rounded-lg"
                 type="text"
-                value={marca}
-                onChange={(e) => setMarca(e.target.value)}
-                placeholder="ejm: DragonPharma"
+                placeholder="Carlos Belcast"
               />
             </div>
-            <div className="grid  gap-2">
-              <label className="p-1 font-bold">Categoría</label>
-              <select
-                className="border p-2 rounded-lg "
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-              >
-                <option value="">--Selecciona--</option>
-                {categorias.map((cat) => (
-                  <option
-                    key={cat.id}
-                    value={cat.id}
-                    className="hover:bg-green-600 focus:bg-green-600"
-                  >
-                    {cat.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid">
-              <label className="p-1 font-bold">Stock</label>
-              <div className="relative">
-                <input
-                  className="border p-2  rounded-lg w-full"
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  placeholder="ejm: 300.00"
-                />
-              </div>
-            </div>
-            <div className="grid">
-              <label className="p-1 font-bold">Precio</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <input
-                  className="border p-2 pl-8 rounded-lg w-full"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  placeholder="ejm: 300.00"
-                />
-              </div>
-            </div>
-
             <div className=" grid">
-              <label className=" p-1 font-bold">Descuento</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <input
-                  className="border p-2 pl-8 rounded-lg w-full"
-                  type="number"
-                  value={descuento}
-                  onChange={(e) => setDescuento(e.target.value)}
-                  placeholder="ejm: 100.00"
-                />
-              </div>
+              <label className=" p-1 font-bold">Apellido Materno</label>
+              <input
+                className="border p-2 rounded-lg"
+                type="text"
+                placeholder="Carlos Belcast"
+              />
+            </div>
+            <div className=" grid col-span-2">
+              <label className=" p-1 font-bold">Especialidad</label>
+              <input
+                className="border p-2 rounded-lg"
+                type="text"
+                placeholder="ejm: Carlos Belcast"
+              />
+            </div>
+            <div className=" grid">
+              <label className=" p-1 font-bold">Telefono</label>
+              <input
+                className="border p-2 rounded-lg"
+                type="text"
+                placeholder="ejm: Carlos Belcast"
+              />
+            </div>
+            <div className=" grid">
+              <label className=" p-1 font-bold">Email</label>
+              <input
+                className="border p-2 rounded-lg"
+                type="email"
+                placeholder="ejm: Carlos Belcast"
+              />
             </div>
           </div>
         </div>
@@ -335,4 +230,4 @@ const FormRegistro = () => {
   );
 };
 
-export default FormRegistro;
+export default FormUpdate;

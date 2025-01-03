@@ -2,54 +2,155 @@ import { FaFilter, FaUserEdit } from "react-icons/fa";
 import { HiSearchCircle } from "react-icons/hi";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import { MdDelete } from "react-icons/md";
-
+import MenuExport from "../ui/MenuExport";
 import PropTypes from "prop-types";
+import { useState } from "react";
+import ConfirmDialogDelete from "../ui/confirmDialogDelete";
+import ToggleSwitch from "../ui/ToggleSwitch";
 
-import { useState /*useEffect */ } from "react";
-import clienteAxios from "../../config/axios";
+const TablaProductos = ({ openModal, dataType }) => {
+  // Datos simulados de productos
+  const productos = [
+    {
+      id: 1,
+      nombre: "Proteina whey de chocolate",
+      marca: "Dragon Pharma",
+      categoria: "Proteina",
+      stock: 35,
+      precio: 1200.0,
+      descuento: 200.0,
+      total: 1000.0,
+      img_secure_url: "/assets/proteina.jpg",
+    },
+    {
+      id: 2,
+      nombre: "BCAA",
+      marca: "MuscleTech",
+      categoria: "Aminoácidos",
+      stock: 15,
+      precio: 900.0,
+      descuento: 100.0,
+      total: 800.0,
+      img_secure_url: "/assets/proteina.jpg",
+    },
+    {
+      id: 3,
+      nombre: "Creatina",
+      marca: "Optimum Nutrition",
+      categoria: "Suplementos",
+      stock: 8,
+      precio: 600.0,
+      descuento: 50.0,
+      total: 550.0,
+      img_secure_url: "/assets/proteina.jpg",
+    },
+    {
+      id: 4,
+      nombre: "Glutamina",
+      marca: "Bodybuilding",
+      categoria: "Aminoácidos",
+      stock: 5,
+      precio: 500.0,
+      descuento: 0.0,
+      total: 500.0,
+      img_secure_url: "/assets/proteina.jpg",
+    },
+    {
+      id: 5,
+      nombre: "Pre-workout",
+      marca: "Cellucor",
+      categoria: "Suplementos",
+      stock: 25,
+      precio: 1100.0,
+      descuento: 150.0,
+      total: 950.0,
+      img_secure_url: "/assets/proteina.jpg",
+    },
+  ];
 
-const TablaProductos = ({ openModal }) => {
-  // const [clientes, setClientes] = useState([]);
-  const [deleteCliente, setDeleteCliente] = useState(null);
-  // const [loading, setLoading] = useState(true);
+  // Filtrar productos según el tipo de stock (dataType)
+  const filterProducts = () => {
+    if (dataType === "suficiente") {
+      return productos.filter((producto) => producto.stock > 20);
+    }
+    if (dataType === "medio") {
+      return productos.filter(
+        (producto) => producto.stock <= 20 && producto.stock >= 10
+      );
+    }
+    if (dataType === "bajo") {
+      return productos.filter((producto) => producto.stock < 10);
+    }
+    return productos; // Si dataType está vacío, muestra todos los productos
+  };
 
-  // Traer los clientes al cargar componente
-  // useEffect(() => {
-  //   const getClientes = async () => {
-  //     try {
-  //       const { data } = await clienteAxios.get("/cliente/");
-  //       setClientes(data);
-  //     } catch (error) {
-  //       console.log("Error al obtener clientes", error);
-  //     }
+  const [deleteProducto, setDeleteProducto] = useState(null);
+  const [optionsExport, setOptionsExport] = useState(null);
 
-  //     setLoading(false);
-  //   };
+  const handleDownload = async () => {
+    console.log("Descargando.....");
+  };
 
-  //   getClientes();
-  // }, []);
+  const handleSendReport = async () => {
+    console.log("Enviando.....");
+  };
+  const handleAvaliable = (newValue) => {
+    /* AQUI CREAMOS LA FUNCION PARA ENVIAR EL NUEVO ESTADO DE DISPONIBILIDAD DEBEMOS RECIBIR EL ID DE LA MEMBRESIA Y EL ESTADO PARA MANDAR LOS CAMBIOS A LA BASE abajo hay un ejemplo de como hacer esa actualizacion del dato, aun falta recibir id en esta funcion recuerda*/
+    // const updatedData = data.map((membership) =>
+    //     membership.id === id
+    //       ? { ...membership, disponible: newValue }
+    //       : membership
+    //   );
+    console.log(newValue);
+  };
+
+  const toggleOptionsExport = () => {
+    setOptionsExport((prev) => !prev);
+  };
 
   const toggleDelete = (id) => {
-    setDeleteCliente(deleteCliente === id ? null : id);
+    setDeleteProducto(deleteProducto === id ? null : id);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const { data } = await clienteAxios.delete(`/cliente/delete/${id}`);
-      console.log(data.msg);
-    } catch (error) {
-      console.log(error);
-    }
+  const handleDelete =  (id) => {
+    console.log("Eliminando producto....", id)
   };
-  // if (loading) return <p>Cargando</p>;
+
   return (
     <>
       <div className="my-4 p-3 bg-white rounded-lg">
-        <div className="p-2 grid md:grid-cols-4  md:gap-5">
-          <div className=" grid grid-cols-3 md:flex  justify-between">
-            <h1 className="col-span-2 p-2 font-bold text-xl">
-              Todos los productos
-            </h1>
+        <div className="p-2 grid md:grid-cols-4 md:gap-5">
+          <div className="grid grid-cols-3 md:flex justify-between">
+            <div className="col-span-2">
+              <h1 className="p-1 font-bold text-xl">Productos totales</h1>
+              {dataType !== "" && (
+                <>
+                  <p
+                    className={`pl-2 pb-1 font-semibold ${
+                      dataType === "suficiente"
+                        ? "text-green-500"
+                        : dataType === "medio"
+                        ? "text-orange-600"
+                        : "text-red-800"
+                    }`}
+                  >
+                    Stock {dataType}
+                  </p>
+
+                  {dataType === "medio" && (
+                    <p className="pl-2 pb-1 text-xs font-semibold">
+                      ¡Actualiza stock antes de que pasen a bajo stock!
+                    </p>
+                  )}
+                  {dataType === "bajo" && (
+                    <p className="pl-2 pb-1 text-xs  font-semibold">
+                      ¡Actualiza stock antes de que se acaben!
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
             <div className="flex md:hidden w-full md:w-0 items-center">
               <button className="w-full p-1 hover:bg-slate-900 hover:bg-opacity-25 hover:scale-125 transition-all duration-300">
                 <RiFileExcel2Fill className="m-auto text-2xl " />
@@ -60,135 +161,131 @@ const TablaProductos = ({ openModal }) => {
             </div>
           </div>
 
-          <div className=" md:col-span-2">
-            <form className="flex">
+          <div className="md:col-span-2 my-auto">
+            <form className="flex ">
               <input
                 type="text"
-                placeholder="Buscar usuario..."
+                placeholder="Buscar producto..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
               />
               <button
                 type="submit"
-                className=" inset-y-0 right-0 flex -ml-5 items-center px-4 text-white bg-zinc-700 rounded-r-lg hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-300"
+                className="inset-y-0 right-0 flex -ml-5 items-center px-4 text-white bg-zinc-700 rounded-r-lg hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-300"
               >
                 <HiSearchCircle className="text-2xl" />
               </button>
             </form>
           </div>
-          <div className="hidden md:flex h-auto items-center text-lg">
-            <button className="w-full gap-2 px-3 border-r-2 border-gray-900 flex  justify-center items-center hover:bg-zinc-600 hover:bg-opacity-20">
+
+          <div className="hidden md:flex gap-4 justify-center h-auto items-center">
+            <button
+              onClick={toggleOptionsExport}
+              type="button"
+              className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
+            >
               <RiFileExcel2Fill /> Exportar
             </button>
-            <button className="w-full gap-2 px-3 flex  justify-center items-center hover:bg-zinc-600 hover:bg-opacity-20">
-              <FaFilter />
-              Filtro
+            {optionsExport && (
+              <MenuExport
+                onDownload={handleDownload}
+                onSendReport={handleSendReport}
+              />
+            )}
+            <button
+              type="button"
+              className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
+            >
+              <FaFilter /> Filtro
             </button>
           </div>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 divide-y divide-gray-300 ">
-            <thead className="bg-gray-100 text-sm ">
+          <table className="min-w-full border border-gray-200 divide-y divide-gray-300">
+            <thead className="bg-gray-100 text-sm">
               <tr className="text-center">
                 <th className="px-5 py-2 text-gray-700 uppercase">#</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Foto</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Nombre</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Marca</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Categoria</th>
-
                 <th className="px-5 py-2 text-gray-700 uppercase">Stock</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Precio</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Descuento</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Total</th>
+                <th className="px-5 py-2 text-gray-700 uppercase">Disponible</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 text-center items-center">
-              <tr key={1} className="hover:bg-gray-100 ">
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  <p>1</p>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 ">
-                  <img
-                    className="w-16 rounded-full ring-2 ring-red-800 m-auto"
-                    src={"/assets/proteina.jpg"}
-                    alt="profile"
-                  />
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  <p>Proteina whey de chocolate</p>
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  <p>Dragon Pharma</p>
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  <p>Proteina</p>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  <p>35</p>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  <p>
-                    <span>$</span>1200.00
-                  </p>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  <p>
-                    <span>$</span>200.00
-                  </p>
-                </td>
-                <td>
-                  <p>
-                    <span>$</span>1000.00
-                  </p>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 h-full">
-                  <div className="flex items-center justify-center gap-4 h-full">
-                    <button
-                      className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
-                      onClick={() => {
-                        openModal("editar");
-                      }}
-                    >
-                      <FaUserEdit className="text-3xl" />
-                    </button>
-                    <button
-                      className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
-                      onClick={() => {
-                        toggleDelete("1");
-                      }}
-                    >
-                      <MdDelete className="text-3xl" />
-                    </button>
-                    {/* Muestra recuadro de confirmacion */}
-                    {deleteCliente === "1" && (
-                      <div className="absolute  mt-2 bg-white border rounded-lg shadow-lg w-56 z-10 p-4   right-10">
-                        <h1 className="text-lg font-semibold text-gray-700 mb-2">
-                          ¿Seguro que deseas eliminar a <br />
-                          <span className="font-bold"></span>?
-                        </h1>
-                        <div className="flex justify-between">
-                          <button
-                            className="bg-gray-200 text-gray-700 py-1 px-3 rounded hover:bg-gray-300"
-                            onClick={() => setDeleteCliente(null)}
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            className="bg-rose-500 text-white py-1 px-3 rounded hover:bg-rose-600"
-                            onClick={() => {
-                              // Aquí puedes manejar la lógica de eliminación
-                              handleDelete();
-                              setDeleteCliente(null);
-                            }}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </td>
-              </tr>
+              {filterProducts().map((producto) => (
+                <tr key={producto.id} className="hover:bg-gray-100">
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {producto.id}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    <img
+                      className="w-16 rounded-full ring-2 ring-red-800 m-auto"
+                      src={producto.img_secure_url}
+                      alt={producto.nombre}
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {producto.nombre}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {producto.marca}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
+                    {producto.categoria}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {producto.stock}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    ${producto.precio}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    ${producto.descuento}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    ${producto.total}
+                  </td>
+                  <td className="px-6 py-4 text-sm  text-gray-700">
+                    <ToggleSwitch avaliable={true} 
+                    onToggle={(newValue) =>{
+                      handleAvaliable(newValue)
+                    }} />
+                  </td>
+                  <td className="px-6 py-4 text-sm h-full">
+                    <div className="flex items-center justify-center gap-4 h-full">
+                      <button
+                        className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
+                        onClick={() => {
+                          openModal("editar", producto.id);
+                        }}
+                      >
+                        <FaUserEdit className="text-3xl" />
+                      </button>
+                      <button
+                        className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
+                        onClick={() => {
+                          toggleDelete(producto.id);
+                        }}
+                      >
+                        <MdDelete className="text-3xl" />
+                      </button>
+                      {deleteProducto === producto.id && (
+                        <ConfirmDialogDelete
+                          message={`¿Seguro que deseas elminar el producto ${producto.nombre}`}
+                          onCancel={() =>{ setDeleteProducto(null)}}
+                          onConfirm={() => handleDelete(producto.id)}
+                        />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -198,7 +295,8 @@ const TablaProductos = ({ openModal }) => {
 };
 
 TablaProductos.propTypes = {
-  openModal: PropTypes.func,
+  openModal: PropTypes.func.isRequired,
+  dataType: PropTypes.string,
 };
 
 export default TablaProductos;

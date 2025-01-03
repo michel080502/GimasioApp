@@ -13,11 +13,9 @@
     @apply fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50;
   }
   .modal {
-    @apply bg-white rounded-lg shadow-lg p-6 max-w-screen-md w-full m-10 md:m-4;
+    @apply bg-white rounded-lg shadow-lg p-6 w-auto  m-10 md:m-4;
   }
-  .button-header {
-    @apply h-full hover:bg-gray-600 hover:bg-opacity-30 hover:border-l-4 hover:border-t-2 transition-[border-width] duration-300 ease-in-out px-4 flex gap-2 items-center;
-  }
+  
   .scale-hover {
     @apply hover:scale-125 transition-transform duration-300 ease-in-out;
   }

@@ -74,7 +74,7 @@ const FormUpdate = ({id}) => {
 	const {msg} = alerta;
 	if(cargando) return <p>Cargando cliente...</p>
 	return (
-		<form className="border p-3 grid gap-5 justify-center" onSubmit={handleSubmit}>
+		<form className="border p-3 grid gap-5 justify-center max-w-screen-md" onSubmit={handleSubmit}>
 			{
 				msg && <Alerta alerta={alerta} />
 			}

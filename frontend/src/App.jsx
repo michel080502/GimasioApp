@@ -32,8 +32,8 @@ function App() {
           <Route path="/admin" element={<Dashboard />}>
             <Route index element={<DashPrincipal />} />
             <Route path="clientes" element={<Clientes />} />
-            <Route path="productos" element={<Productos />} />
             <Route path="membresias" element={<Membresias />} />
+            <Route path="productos" element={<Productos />} />
             <Route path="entrenadores" element={<Entrenadores />} />
             <Route path="ventas" element={<Ventas />} />
             <Route path="configuracion" element={<Configuracion />} />

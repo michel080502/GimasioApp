@@ -1,6 +1,5 @@
 import { IoMdAddCircle, IoMdCloseCircle } from "react-icons/io";
 import Modal from "../../components/Modal";
-import CardInforme from "../../components/clientes/CardInforme";
 import TablaClientes from "../../components/clientes/TablaClientes";
 import { useState, useEffect } from "react";
 import clienteAxios from "../../config/axios";
@@ -9,7 +8,6 @@ import FormUpdate from "../../components/clientes/FormUpdate";
 
 const Clientes = () => {
   const [clientes, setClientes] = useState([]);
-  const [filterType, setFilterType] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -31,9 +29,6 @@ const Clientes = () => {
     getClientes();
   }, []);
 
-  const handleFilterChange = (type) => {
-    setFilterType(type); // Actualizar el estado con el filtro seleccionado
-  };
 
   const openModal = (modalName, id = null) => {
     setActiveModal(modalName), setSelectedId(id);
@@ -56,10 +51,10 @@ const Clientes = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 ">
+      {/* <div className="grid grid-cols-3 gap-4 ">
          <CardInforme clientes={clientes} typeData={handleFilterChange} /> 
-      </div>
-      <TablaClientes clientes={clientes} setClientes={setClientes} openModal={openModal} filterType={filterType} />
+      </div> */}
+      <TablaClientes clientes={clientes} setClientes={setClientes} openModal={openModal}  />
 
       {/* Modal de registro */}
       {activeModal === "registrar" && (
@@ -87,6 +82,7 @@ const Clientes = () => {
           <FormUpdate id={selectedId} />
         </Modal>
       )}
+      
     </div>
   );
 };

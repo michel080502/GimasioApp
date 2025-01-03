@@ -1,4 +1,4 @@
-import { FaFilter } from "react-icons/fa";
+
 import { HiSearchCircle } from "react-icons/hi";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import { MdDelete } from "react-icons/md";
@@ -6,9 +6,17 @@ import { BsPencilFill } from "react-icons/bs";
 import PropTypes from "prop-types";
 import { useState } from "react";
 import ToggleSwitch from "../ui/ToggleSwitch";
+import MenuExport from "../ui/MenuExport";
 const TablaMembresias = ({ openModal }) => {
   const [deleteMembresia, setDeleteMembresia] = useState(false);
+  const [optionsExport, setOptionsExport] = useState(null);
 
+  const handleDownload = async () => {
+    console.log("Descargando.....")
+  }
+  const handleSendReport = async () => {
+    console.log("Enviando.....")
+  }
   const handleAvaliable = (newValue) => {
     /* AQUI CREAMOS LA FUNCION PARA ENVIAR EL NUEVO ESTADO DE DISPONIBILIDAD DEBEMOS RECIBIR EL ID DE LA MEMBRESIA Y EL ESTADO PARA MANDAR LOS CAMBIOS A LA BASE abajo hay un ejemplo de como hacer esa actualizacion del dato, aun falta recibir id en esta funcion recuerda*/
     // const updatedData = data.map((membership) =>
@@ -18,51 +26,60 @@ const TablaMembresias = ({ openModal }) => {
     //   );
     console.log(newValue);
   };
+  const toggleOptionsExport = () => {
+    setOptionsExport((prev) => !prev);
+  };
   const toggleDelete = () => {
     setDeleteMembresia(true);
   };
+  
   return (
     <div className="my-4 p-3 bg-white rounded-lg">
-      <div className="p-2 grid md:grid-cols-4 gap-2 md:gap-5">
+      <div className="p-2 grid md:grid-cols-5 gap-2 md:gap-5">
         <div className=" grid grid-cols-3 items-center md:flex  justify-between">
           <h1 className="col-span-2 gap-2 font-bold text-xl">
             Tipos membresia
           </h1>
 
           <div className="flex md:hidden w-full md:w-0 items-center">
-            <button className="w-full p-1 hover:bg-slate-900 hover:bg-opacity-25 hover:scale-125 transition-all duration-300">
-              <RiFileExcel2Fill className="m-auto text-2xl " />
-            </button>
-            <button className="w-full p-1 hover:bg-slate-900 hover:bg-opacity-25 hover:scale-125 transition-all duration-300">
-              <FaFilter className="m-auto text-2xl" />
+            
+            <button className="w-full m-2 bg-black rounded-lg text-white hover:bg-red-900  hover:scale-110 p-2 transition-all duration-300">
+              <RiFileExcel2Fill  className="m-auto text-2xl" />
             </button>
           </div>
         </div>
 
-        <div className=" md:col-span-2 my-auto">
+        <div className=" md:col-span-3 my-auto">
           <form className="flex">
             <input
               type="text"
-              placeholder="Buscar usuario..."
+              placeholder="Buscar tipo membresia..."
               className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
             />
             <button
-              type="submit"
+              type="button"
               className=" inset-y-0 right-0 flex -ml-5 items-center px-4 text-white bg-zinc-700 rounded-r-lg hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-300"
             >
               <HiSearchCircle className="text-2xl" />
             </button>
           </form>
         </div>
-        <div className="hidden md:flex h-auto items-center text-lg">
-          <button className="scale-hover-10 w-full gap-2 px-3 border-r-2 border-gray-900 flex  justify-center items-center hover:bg-zinc-600 hover:bg-opacity-20">
-            <RiFileExcel2Fill /> Exportar
-          </button>
-          <button className="scale-hover-10 w-full gap-2 px-3 flex  justify-center items-center hover:bg-zinc-600 hover:bg-opacity-20">
-            <FaFilter />
-            Filtro
-          </button>
-        </div>
+         <div className="hidden md:flex justify-center divide-x-4 h-auto items-center ">
+                  <button
+                    onClick={toggleOptionsExport}
+                    type="button"
+                    className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
+                  >
+                    <RiFileExcel2Fill /> Exportar
+                  </button>
+                  {/* Recuadro con opciones de exportación */}
+                  {optionsExport && (
+                    <MenuExport
+                      onDownload={handleDownload}
+                      onSendReport={handleSendReport}
+                    />
+                  )}
+                </div>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full border border-gray-200 divide-y divide-gray-300 ">
@@ -75,9 +92,7 @@ const TablaMembresias = ({ openModal }) => {
                 Días de duración
               </th>
               <th className="px-5 py-2 text-gray-700 uppercase">Precio</th>
-              <th className="px-5 py-2 text-gray-700 uppercase">Descuento</th>
-              <th className="px-5 py-2 text-gray-700 uppercase">Total</th>
-
+             
               <th className="px-5 py-2 text-gray-700 uppercase">Disponible</th>
 
               <th className="px-5 py-2 text-gray-700 uppercase">Acciones</th>
@@ -106,17 +121,7 @@ const TablaMembresias = ({ openModal }) => {
                   <span>$</span>400.00
                 </p>
               </td>
-              <td className="px-6 py-4 text-sm text-gray-700">
-                <p>
-                  <span>$</span>100.00
-                </p>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-700">
-                <p>
-                  <span>$</span>300.00
-                </p>
-              </td>
-
+             
               <td className="px-6 py-4 text-sm  text-gray-700">
                 {/*Este es el boton para decir si está disponible o no, en onToggle, enviamos el valor de newValue para poder ejecutar el handleToggle en el parent component y que haga la validacion dentro de esa funcion, dentro de esa funcion se ejecutara handleAvaliable que esta aqui para cambiar la DB */}
                 <ToggleSwitch

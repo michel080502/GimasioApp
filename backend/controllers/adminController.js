@@ -6,7 +6,7 @@ import emailRegistro from "../helpers/emailRegistro.js";
 import emailOlvidePassword from "../helpers/emailOlvidePassword.js";
 
 const registrar = async (req, res) => {
-  const { nombre, apellido, email, telefono, password } = req.body;
+  const { nombre, apellidoPaterno, apellidoMaterno, email, telefono, password } = req.body;
 
   //Prevenir duplicado de email
   const query = "SELECT * FROM admins WHERE email = $1";
@@ -30,7 +30,8 @@ const registrar = async (req, res) => {
 
     const { rows: newAdmin } = await pool.query(insertQuery, [
       nombre,
-      apellido,
+      apellidoPaterno,
+      apellidoMaterno,
       email,
       telefono,
       hashedPassword,

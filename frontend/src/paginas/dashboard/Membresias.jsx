@@ -1,12 +1,14 @@
 import { IoMdAddCircle } from "react-icons/io";
 import { IoMdCloseCircle } from "react-icons/io";
-import { useState } from "react";
+
 import Modal from "../../components/Modal";
 import CardInforme from "../../components/membresias/CardInforme";
-import Activas from "../../components/membresias/tablasEstado/Activas";
-import ProximasVencer from "../../components/membresias/tablasEstado/ProximasVencer";
-import VencenHoy from "../../components/membresias/tablasEstado/VencenHoy";
+import TablaCompras from "../../components/membresias/TablaCompras";
 import TablaMembresias from "../../components/membresias/TablaMembresias";
+import FormRegistro from "../../components/membresias/FormRegistro";
+import FormUpdate from "../../components/membresias/FormUpdate";
+
+import { useState } from "react";
 
 const Membresias = () => {
   const [activeModal, setActiveModal] = useState(null);
@@ -37,10 +39,8 @@ const Membresias = () => {
         <CardInforme typeTable={typeTable} />
       </div>
       {/* Tablas informes */}
-      {tablaDatos === "" && <TablaMembresias />}
-      {tablaDatos === "activos" && <Activas />}
-      {tablaDatos === "porVencer" && <ProximasVencer />}
-      {tablaDatos === "vencenHoy" && <VencenHoy />}
+      {tablaDatos === "" && <TablaMembresias openModal={openModal} />}
+      {tablaDatos !== "" && <TablaCompras tipo ={tablaDatos} openModal={openModal}/>}
 
       {/* Modal de agregar productos */}
       {activeModal === "registrar" && (
@@ -51,22 +51,23 @@ const Membresias = () => {
               <IoMdCloseCircle className="text-3xl" />
             </button>
           </div>
-          {/* Espacio para form */}
+          <FormRegistro />
         </Modal>
       )}
       {/* Modal de registro */}
       {activeModal === "editar" && (
         <Modal closeModal={closeModal}>
           <div className="flex justify-between pb-3">
-            <h2 className="text-2xl font-semibold">Editar cliente</h2>
+            <h2 className="text-2xl font-semibold">Editar membresia</h2>
             <button className="text-red-700" onClick={closeModal}>
               <IoMdCloseCircle className="text-3xl" />
             </button>
           </div>
 
-          {/* Form Update */}
+          <FormUpdate />
         </Modal>
       )}
+      
     </div>
   );
 };
