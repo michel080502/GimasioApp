@@ -59,7 +59,8 @@ const perfil = (req, res) => {
   res.json({
     id: admin.id,
     nombre: admin.nombre,
-    apellido: admin.apellido,
+    apellidoPaterno: admin.apellidoPaterno,
+    apellidoMaterno: admin.apellidoMaterno,
     email: admin.email,
   });
 };
@@ -123,7 +124,8 @@ const autenticar = async (req, res) => {
     res.json({
       id: usuario.id, // Usamos 'id' porque en PostgreSQL es el nombre del campo
       nombre: usuario.nombre,
-      apellido: usuario.apellido,
+      apellidoPaterno: usuario.apellidoPaterno,
+      apellidoMaterno: usuario.apellidoMaterno,
       email: usuario.email,
       token,
     });
