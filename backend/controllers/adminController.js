@@ -24,8 +24,8 @@ const registrar = async (req, res) => {
     const token = generarId();
 
     const insertQuery = `
-			INSERT INTO admins (nombre, apellido, email, telefono, password, token, confirmado)
-			VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+			INSERT INTO admins (nombre, apellidopaterno, apellidomaterno, email, telefono, password, token, confirmado)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
 		`;
 
     const { rows: newAdmin } = await pool.query(insertQuery, [
