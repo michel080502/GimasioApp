@@ -8,6 +8,7 @@ import pool from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import productRouter from "./routes/productRoutes.js";
+import membershipRouter from "./routes/membershipRoutes.js";
 
 
 dotenv.config();
@@ -52,6 +53,7 @@ app.use((req, res, next) => {
 app.use("/api/admin", adminRoutes);
 app.use("/api/cliente", clientRoutes);
 app.use("/api/producto", productRouter);
+app.use("/api/membresia",membershipRouter);
 
 const PORT = process.env.PORT || 4000;
 

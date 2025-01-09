@@ -21,7 +21,7 @@ const SideBar = ({ admin }) => {
 					src="/assets/logo.jpg"
 					className="w-20 h-20 object-cover rounded-full ring-4 ring-red-900"
 				/>
-				<h1 className=" text-center text-white font-bold">{`${admin.nombre} ${admin.apellido}`}</h1>
+				<h1 className=" text-center text-white font-bold">{`${admin.nombre} ${admin.apellidoPaterno} ${admin.apellidoMaterno}`}</h1>
 				<button 
 					className="button"
 					onClick={cerrarSesion}>
@@ -110,7 +110,8 @@ const SideBar = ({ admin }) => {
 SideBar.propTypes = {
 	admin: PropTypes.shape({
 		nombre: PropTypes.string.isRequired,
-		apellido: PropTypes.string.isRequired,
+		apellidoPaterno: PropTypes.string.isRequired,
+		apellidoMaterno: PropTypes.string.isRequired,
 		// Agrega otras propiedades si es necesario
 	}).isRequired,
 };
