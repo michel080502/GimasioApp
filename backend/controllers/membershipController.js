@@ -88,7 +88,7 @@ const actualizar = async (req, res) => {
       disponible !== undefined ? disponible : membresia[0].disponible,
       id,
     ]);
-    res.json({ msg: "Cliente modificado correctamente" });
+    res.json({ msg: "Datos de membresia modificados correctamente" });
   } catch (error) {
     console.log(error);
     res
@@ -118,7 +118,7 @@ const actualizarDisponible = async (req, res) => {
       disponible !== undefined ? disponible : membresia[0].disponible,
       id,
     ]);
-    res.json({ msg: "Cliente modificado correctamente" });
+    res.json({ msg: "Dato de membresia modificado correctamente" });
   } catch (error) {
     console.log(error);
     res
@@ -153,11 +153,9 @@ const obtnerNumeroMembresias = async (req, res) => {
     return res.status(200).json(totalMembresias);
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({
-        msg: "Hubo error al obtener el total de membresias en el sistema",
-      });
+    res.status(500).json({
+      msg: "Hubo error al obtener el total de membresias en el sistema",
+    });
   }
 };
 
@@ -173,7 +171,43 @@ const obtenerMembresiaPorId = async (req, res) => {
     return res.status(200).json(Membresia);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ msg: "Hubo error al obtener los datos de la Membresia" });
+    res
+      .status(500)
+      .json({ msg: "Hubo error al obtener los datos de la Membresia" });
+  }
+};
+
+const obtenerMembresiasClientes = async (req, res) => {
+  try {
+    const querySelect = `SELECT 
+    cm.id,
+    c.nombre AS cliente_nombre,
+    c.apellido_paterno AS cliente_apellido_paterno,
+	  c.apellido_materno AS cliente_apellido_materno,
+	  c.img_public_id AS cliente_img_id,
+    m.nombre AS membresia,
+    cm.fecha_compra,
+    cm.fecha_expiracion,
+    GREATEST(0, EXTRACT(DAY FROM (cm.fecha_expiracion - NOW()))) AS dias_restantes,
+    CASE 
+        WHEN cm.fecha_expiracion = CURRENT_DATE THEN 'vence hoy'
+        WHEN cm.fecha_expiracion > CURRENT_DATE THEN 
+            CASE 
+                WHEN cm.fecha_expiracion <= CURRENT_DATE + INTERVAL '7 days' THEN 'por vencer'
+                ELSE 'activa'
+            END
+        ELSE 'vencida'
+    END AS estado
+FROM compras_membresias cm
+JOIN clientes c ON cm.cliente_id = c.id
+JOIN membresias m ON cm.membresia_id = m.id`;
+    const { rows: membresiasClientes } = await pool.query(querySelect);
+    return res.status(200).json(membresiasClientes);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ msg: "Hubo error al obtener los datos de las membresias" });
   }
 };
 
@@ -185,4 +219,5 @@ export {
   obtenerTodas,
   obtnerNumeroMembresias,
   obtenerMembresiaPorId,
+  obtenerMembresiasClientes,
 };
