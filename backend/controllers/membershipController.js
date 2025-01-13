@@ -20,7 +20,7 @@ const crear = async (req, res) => {
     if (!nombre || !beneficios || !duracion_dias || !precio) {
       return res
         .status(400)
-        .json({ message: "Todos los campos son obligatorios." });
+        .json({ msg: "Todos los campos son obligatorios." });
     }
 
     //Filtra las membresias creadas anteriormente y valida si ya existe una con el nombre ingresado
@@ -29,7 +29,7 @@ const crear = async (req, res) => {
     if (membresiaExiste.length > 0) {
       return res
         .status(400)
-        .json({ msg: "Ya existe una membresia con ese nombre." });
+        .json({ error: "Ya existe una membresia con ese nombre." });
     }
 
     //Inserta la membresia a la base de datos
@@ -53,7 +53,7 @@ const crear = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ msg: "Error al registrar la membresia" });
+    res.status(500).json({ error: "Error al registrar la membresia" });
   }
 };
 
@@ -67,7 +67,7 @@ const actualizar = async (req, res) => {
     if (membresia.length === 0) {
       return res
         .status(404)
-        .json({ msg: "Membresia no encontrada en la base de datos" });
+        .json({ error: "Membresia no encontrada en la base de datos" });
     }
     const queryUpdate = `
     UPDATE membresias
@@ -93,7 +93,7 @@ const actualizar = async (req, res) => {
     console.log(error);
     res
       .status(500)
-      .json({ msg: "Hubo error al actualizar los datos de la membresia" });
+      .json({ error: "Hubo error al actualizar los datos de la membresia" });
   }
 };
 
@@ -106,7 +106,7 @@ const actualizarDisponible = async (req, res) => {
     if (membresia.length === 0) {
       return res
         .status(404)
-        .json({ msg: "Membresia no encontrada en la base de datos" });
+        .json({ error: "Membresia no encontrada en la base de datos" });
     }
     const queryUpdate = `
       UPDATE membresias
@@ -118,12 +118,12 @@ const actualizarDisponible = async (req, res) => {
       disponible !== undefined ? disponible : membresia[0].disponible,
       id,
     ]);
-    res.json({ msg: "Dato de membresia modificado correctamente" });
+    res.json({ error: "Dato de membresia modificado correctamente" });
   } catch (error) {
     console.log(error);
     res
       .status(500)
-      .json({ msg: "Hubo error al actualizar los datos de la membresia" });
+      .json({ error: "Hubo error al actualizar los datos de la membresia" });
   }
 };
 
@@ -148,7 +148,7 @@ const elimiarPorId = async (req, res) => {
 
 const obtnerNumeroMembresias = async (req, res) => {
   try {
-    const querySelect = "SELECT COUNT(*) AS total_registros FROM membresias";
+    const querySelect = "SELECT COUNT(*) AS membresias_registradas FROM membresias";
     const { rows: totalMembresias } = await pool.query(querySelect);
     return res.status(200).json(totalMembresias);
   } catch (error) {
@@ -166,7 +166,7 @@ const obtenerMembresiaPorId = async (req, res) => {
     const { rows: Membresia } = await pool.query(querySelect, [id]);
     if (Membresia.length === 0) {
       const error = new Error("Membresia no encontrada en la base de datos");
-      return res.status(400).json({ msg: error.message });
+      return res.status(400).json({ error: error.message });
     }
     return res.status(200).json(Membresia);
   } catch (error) {
@@ -179,28 +179,7 @@ const obtenerMembresiaPorId = async (req, res) => {
 
 const obtenerMembresiasClientes = async (req, res) => {
   try {
-    const querySelect = `SELECT 
-    cm.id,
-    c.nombre AS cliente_nombre,
-    c.apellido_paterno AS cliente_apellido_paterno,
-	  c.apellido_materno AS cliente_apellido_materno,
-	  c.img_public_id AS cliente_img_id,
-    m.nombre AS membresia,
-    cm.fecha_compra,
-    cm.fecha_expiracion,
-    GREATEST(0, EXTRACT(DAY FROM (cm.fecha_expiracion - NOW()))) AS dias_restantes,
-    CASE 
-        WHEN cm.fecha_expiracion = CURRENT_DATE THEN 'vence hoy'
-        WHEN cm.fecha_expiracion > CURRENT_DATE THEN 
-            CASE 
-                WHEN cm.fecha_expiracion <= CURRENT_DATE + INTERVAL '7 days' THEN 'por vencer'
-                ELSE 'activa'
-            END
-        ELSE 'vencida'
-    END AS estado
-FROM compras_membresias cm
-JOIN clientes c ON cm.cliente_id = c.id
-JOIN membresias m ON cm.membresia_id = m.id`;
+    const querySelect = `SELECT * FROM vista_compras_membresias`;
     const { rows: membresiasClientes } = await pool.query(querySelect);
     return res.status(200).json(membresiasClientes);
   } catch (error) {
