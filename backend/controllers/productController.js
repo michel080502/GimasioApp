@@ -215,11 +215,30 @@ const obtenerTotal = async (req, res) => {
   }
 };
 
+const eliminar = async (req, res) => {
+  const { id } = req.params;
+  const deleteQuery = "DELETE FROM productos WHERE id = $1 RETURNING *";
+  try {
+    const { rows: productoEliminado } = await pool.query(deleteQuery, [id]);
+    //Valida que la membresia se haya eliminado correctamente
+    if (productoEliminado.length === 0) {
+      const error = new Error("Producto no encontrado en la base de datos");
+      return res.status(400).json({ msg: error.message });
+    }
+    await deleteImage(productoEliminado[0].img_public_id);
+    return res.json({ msg: "Producto eliminado correctamente" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+};
+
 export {
   crear,
   crearCategoria,
   actualizar,
   actualizarDisponible,
   obtenerTodos,
-  obtenerTotal
+  obtenerTotal,
+  eliminar
 };

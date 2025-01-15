@@ -3,31 +3,15 @@ import pool from "../config/db.js";
 const comprarMembresia = async (req, res) => {
   const { id_cliente, id_membresia, duracion_membresia } = req.body;
   try {
-    const queryFindMembresia = `SELECT 
-                                cm.id AS compra_id,
-                                cm.cliente_id,
-                                c.nombre AS cliente_nombre,
-                                m.nombre AS membresia_nombre,
-                                cm.fecha_compra,
-                                cm.fecha_expiracion,
-                                CASE 
-                                    WHEN cm.fecha_expiracion = CURRENT_DATE THEN 'vence hoy'
-                                    WHEN cm.fecha_expiracion > CURRENT_DATE THEN 
-                                        CASE 
-                                            WHEN cm.fecha_expiracion <= CURRENT_DATE + INTERVAL '7 days' THEN 'por vencer'
-                                            ELSE 'activa'
-                                    END
-                                ELSE 'vencida'
-                    END AS estado
-    FROM compras_membresias cm
-    JOIN clientes c ON cm.cliente_id = c.id
-    JOIN membresias m ON cm.membresia_id = m.id
-    WHERE cm.cliente_id = $1
-        ORDER BY cm.fecha_compra DESC
-        LIMIT 1;`;
+    const queryFindMembresia = `SELECT * FROM public.vista_ultima_compra_membresia WHERE cliente_id = $1;`;
     const { rows: clienteMembresia } = await pool.query(queryFindMembresia, [
       id_cliente,
     ]);
+    if (clienteMembresia.length === 0) {
+      return res.status(404).json({
+        msg: "Error al recuperar datos del cliente",
+      });
+    }
     //Valida si el cliente ya cuenta con una membresia y que este activa
     if (clienteMembresia[0].estado == "activa") {
       return res.status(404).json({
@@ -52,7 +36,10 @@ const comprarMembresia = async (req, res) => {
       msg: "Compra de membresia realizada exitosamente",
       compra: compraMembresia[0],
     });
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
 };
 
 export { comprarMembresia };
