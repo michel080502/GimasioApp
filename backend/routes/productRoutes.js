@@ -1,22 +1,33 @@
 import express from "express";
-import { actualizar, actualizarDisponible, crear, crearCategoria, eliminar, obtenerTodos, obtenerTotal } from "../controllers/productController.js";
+import {
+  crear,
+  actualizar,
+  actualizarDisponible,
+  deleteProducto,
+  crearCategoria,
+  deleteCategoria,
+  allCategoria,
+  obtenerTodos,
+  obtenerTotal,
+} from "../controllers/productController.js";
 import fileUpload from "express-fileupload";
 
 const router = express.Router();
 
+router.get("/", obtenerTodos);
 router.post(
   "/crear",
   fileUpload({ useTempFiles: true, tempFileDir: "./uploads" }),
   crear
 );
-router.post("/crearCategoria", crearCategoria);
 router.put("/actualizar/:id", actualizar);
-router.put("/actualizarDisponible/:id", actualizarDisponible);
-router.get("/",obtenerTodos);
-router.get("/total",obtenerTotal);
-router.delete("/eliminar/:id",eliminar);
+router.put("/actualizar-disponible/:id", actualizarDisponible);
+router.delete("/delete/:id", deleteProducto);
 
+router.get("/categorias", allCategoria);
+router.post("/crear-categoria", crearCategoria);
+router.delete("/categoria-delete/:id", deleteCategoria);
 
-
+router.get("/total", obtenerTotal);
 
 export default router;

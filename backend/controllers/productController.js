@@ -5,9 +5,8 @@ import fs from "fs-extra";
 const crear = async (req, res, next) => {
   const { nombre, marca, categoria, stock, precio, descuento, total } =
     req.body;
-  console.log(req.body);
   try {
-    const query = "SELECT * FROM categorias_productos WHERE nombre = $1";
+    const query = "SELECT * FROM categorias_productos WHERE id = $1";
     const { rows: categoriaExiste } = await pool.query(query, [categoria]);
     if (categoriaExiste.length === 0) {
       return res.status(400).json({
@@ -21,12 +20,17 @@ const crear = async (req, res, next) => {
           "El descuento del producto no puede ser mayor al precio original.",
       });
     }
-    const filterquery = "SELECT * FROM productos WHERE nombre = $1";
-    const { rows: productoExiste } = await pool.query(filterquery, [nombre]);
+    const filterquery =
+      "SELECT * FROM productos WHERE nombre = $1 AND archived = $2";
+    const { rows: productoExiste } = await pool.query(filterquery, [
+      nombre,
+      false,
+    ]);
     if (productoExiste.length > 0) {
-      return res
-        .status(400)
-        .json({ error: "Ya existe un producto con ese nombre." });
+      const error = new Error("Ya existe producto con ese nombre.");
+      return res.status(409).json({
+        msg: error.message,
+      });
     }
     let img = {};
     if (req.files?.img) {
@@ -38,10 +42,10 @@ const crear = async (req, res, next) => {
       await fs.unlink(req.files.img.tempFilePath);
     }
     const insertQuery = `
-    INSERT INTO productos (nombre, marca, categoria_id, stock, precio, descuento, total,img_public_id, img_secure_url) 
+    INSERT INTO productos (nombre, marca, categoria_id, stock, precio, descuento, total, img_public_id, img_secure_url) 
    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
    `;
-    const { rows: producto } = await pool.query(insertQuery, [
+    await pool.query(insertQuery, [
       nombre,
       marca,
       id_categoria,
@@ -56,7 +60,6 @@ const crear = async (req, res, next) => {
     //req.io.emit("nuevo-cliente", nuevoCliente[0]);
     res.json({
       msg: "Producto registrado exitosamente",
-      producto: producto[0],
     });
   } catch (error) {
     console.error(error);
@@ -66,23 +69,25 @@ const crear = async (req, res, next) => {
 
 const actualizar = async (req, res) => {
   const { id } = req.params;
-  const { nombre, marca, categoria, stock, precio, descuento, total } =
+  const { nombre, marca, categoria_id, stock, precio, descuento, total } =
     req.body;
   try {
     //Se valida que el producto este en la base de datos
     const queryFind = "SELECT * FROM productos WHERE id = $1";
     const { rows: productoActualizar } = await pool.query(queryFind, [id]);
     if (productoActualizar.length === 0) {
+      const error = new Error("El producto no se encuentra registrado");
       return res.status(404).json({
-        error: "EL producto no se encuentra registrado en la base de datos",
+        msg: error.message,
       });
     }
     //Se valida que la categoria exista en la base de datos
-    const query = "SELECT * FROM categorias_productos WHERE nombre = $1";
-    const { rows: categoriaExiste } = await pool.query(query, [categoria]);
+    const query = "SELECT * FROM categorias_productos WHERE id = $1";
+    const { rows: categoriaExiste } = await pool.query(query, [categoria_id]);
     if (categoriaExiste.length === 0) {
-      return res.status(400).json({
-        error: "La categoria no existe en la base de datos.",
+      const error = new Error("La categoria no existe en el sistema");
+      return res.status(404).json({
+        msg: error.message,
       });
     }
     const id_categoria = categoriaExiste[0].id;
@@ -92,64 +97,133 @@ const actualizar = async (req, res) => {
           "El descuento del producto no puede ser mayor al precio original.",
       });
     }
+    // Construir la consulta de actualización, solo actualizando los campos que hayan cambiado
     const queryUpdate = `
-    UPDATE productos
-    SET 
-      nombre = $1, 
-      marca = $2, 
-      categoria_id = $3, 
-      stock = $4,
-      precio = $5,
-      descuento = $6,
-      total = $7
-    WHERE id = $8
-  `;
-    //Actualiza registro en bd
+      UPDATE productos
+      SET 
+        nombre = COALESCE($1, nombre), 
+        marca = COALESCE($2, marca), 
+        categoria_id = COALESCE($3, categoria_id),
+        stock = COALESCE($4, stock),
+        precio = COALESCE($5, precio),
+        descuento = COALESCE($6, descuento),
+        total = COALESCE($7, total)
+      WHERE id = $8
+    `;
+
+    // Ejecutar la consulta de actualización
     await pool.query(queryUpdate, [
-      nombre !== undefined ? nombre : productoActualizar[0].nombre,
-      marca !== undefined ? marca : productoActualizar[0].marca,
-      id_categoria !== undefined
-        ? id_categoria
-        : productoActualizar[0].categoria_id,
-      stock !== undefined ? stock : productoActualizar[0].stock,
-      precio !== undefined ? precio : productoActualizar[0].precio,
-      descuento !== undefined ? descuento : productoActualizar[0].descuento,
-      total !== undefined ? total : productoActualizar[0].total,
+      nombre || null,
+      marca || null,
+      id_categoria || null,
+      stock || null,
+      precio || null,
+      descuento || null,
+      total || null,
       id,
     ]);
+
     res.json({ msg: "Datos del producto actualizados correctamente" });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Hubo error en el servidor" });
+    console.error(error);
+    res.status(500).json({ error: "Error al registrar el producto" });
   }
 };
 
 const crearCategoria = async (req, res) => {
-  const { categoria } = req.body;
+  const { nombre } = req.body;
   // Validación inicial
-  if (!categoria || categoria.trim() === "") {
-    return res
-      .status(400)
-      .json({ msg: "El nombre de la categoría es obligatorio." });
+  if (!nombre.trim()) {
+    const error = new Error("El nombre de la categoría es obligatorio.");
+    return res.status(400).json({ msg: error.message });
   }
   try {
     // Verificar si la categoría ya existe
     const queryFind = `SELECT * FROM categorias_productos WHERE nombre = $1`;
-    const { rows: categoriaExiste } = await pool.query(queryFind, [categoria]);
-    if (categoriaExiste.length > 0) {
-      return res.status(400).json({
-        error: "La categoría ya se encuentra registrada en la base de datos.",
+    const { rows: categoriaExiste } = await pool.query(queryFind, [nombre]);
+    if (categoriaExiste.length > 0 && categoriaExiste[0].archived === false) {
+      const error = new Error(
+        "La categoría ya se encuentra registrada en la base de datos."
+      );
+      return res.status(409).json({
+        msg: error.message,
       });
+    } else if (categoriaExiste.length > 0 && categoriaExiste[0].archived === false) {
+      const queryUpdateActive = `UPDATE categorias_productos 
+      SET 
+      archived = $1
+      WHERE id = $2
+      RETURNING *`;
+      const { rows: categoriaReactive } = await pool.query(queryUpdateActive, [
+        false,
+        categoriaExiste[0].id,
+      ]);
+      return res
+        .status(200)
+        .json({ msg: `Categoria reactivada '${categoriaReactive[0].nombre}'` });
     }
+
     // Insertar nueva categoría
-    const queryInsert = `INSERT INTO categorias_productos(nombre) VALUES ($1) RETURNING *`;
-    const { rows: categoriaNueva } = await pool.query(queryInsert, [categoria]);
+    const queryInsert = `INSERT INTO categorias_productos (nombre) VALUES ($1) RETURNING *`;
+    const { rows: categoriaNueva } = await pool.query(queryInsert, [nombre]);
     return res.status(201).json({
       msg: `Categoría '${categoriaNueva[0].nombre}' creada correctamente`,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al registrar la categoría" });
+  }
+};
+
+const deleteProducto = async (req, res) => {
+  const { id } = req.params;
+  const queryFind = "SELECT * FROM productos WHERE id = $1";
+  try {
+    const { rows: producto } = await pool.query(queryFind, [id]);
+    if (producto.length === 0) {
+      const error = new Error("Producto no encontrado");
+      return res.status(404).json({ msg: error.message });
+    }
+    const logicalErase = `UPDATE productos SET archived = $1 WHERE id = $2`;
+    await pool.query(logicalErase, [true, id]);
+    await deleteImage(producto[0].img_public_id);
+    res.json({ msg: "Producto eliminado" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo error en el servidor" });
+  }
+};
+
+const deleteCategoria = async (req, res) => {
+  const { id } = req.params;
+  const queryFind = "SELECT * FROM categorias_productos WHERE id = $1";
+  try {
+    const { rows: categoria } = await pool.query(queryFind, [id]);
+    if (categoria.length === 0) {
+      const error = new Error("Categoria no encontrada");
+      return res.status(404).json({ msg: error.message });
+    }
+    const logicalErase = `UPDATE categorias_productos SET archived = $1 WHERE id = $2`;
+    await pool.query(logicalErase, [true, id]);
+
+    res.json({ msg: "Categoria eliminada" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo error en el servidor" });
+  }
+};
+
+const allCategoria = async (req, res) => {
+  try {
+    const querySelect =
+      "SELECT * FROM categorias_productos WHERE archived = false";
+    const { rows: categorias } = await pool.query(querySelect);
+    return res.status(200).json(categorias);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ error: "Hubo error al obtener los datos de las membresias" });
   }
 };
 
@@ -192,7 +266,15 @@ const obtenerTodos = async (req, res) => {
   try {
     const querySelect = "SELECT * FROM vista_nivel_stock ORDER BY id ASC ";
     const { rows: productos } = await pool.query(querySelect);
-    return res.status(200).json(productos);
+    // Convertir los campos precio, descuento y total a números
+    const productosConvertidos = productos.map((producto) => ({
+      ...producto,
+      precio: parseFloat(producto.precio),
+      descuento: parseFloat(producto.descuento),
+      total: parseFloat(producto.total),
+    }));
+
+    return res.status(200).json(productosConvertidos);
   } catch (error) {
     console.log(error);
     res
@@ -215,30 +297,14 @@ const obtenerTotal = async (req, res) => {
   }
 };
 
-const eliminar = async (req, res) => {
-  const { id } = req.params;
-  const deleteQuery = "DELETE FROM productos WHERE id = $1 RETURNING *";
-  try {
-    const { rows: productoEliminado } = await pool.query(deleteQuery, [id]);
-    //Valida que la membresia se haya eliminado correctamente
-    if (productoEliminado.length === 0) {
-      const error = new Error("Producto no encontrado en la base de datos");
-      return res.status(400).json({ msg: error.message });
-    }
-    await deleteImage(productoEliminado[0].img_public_id);
-    return res.json({ msg: "Producto eliminado correctamente" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ msg: "Hubo un error en el servidor" });
-  }
-};
-
 export {
   crear,
-  crearCategoria,
   actualizar,
   actualizarDisponible,
+  deleteProducto,
+  crearCategoria,
+  deleteCategoria,
+  allCategoria,
   obtenerTodos,
   obtenerTotal,
-  eliminar
 };

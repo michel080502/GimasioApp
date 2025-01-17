@@ -21,7 +21,6 @@ const AuthProvider = ({ children }) => {
 					Authorization: `Bearer ${token}`
 				}
 			}
-
 			try {
 				const { data } = await clienteAxios('/admin/perfil', config);
 				setAuth(data);

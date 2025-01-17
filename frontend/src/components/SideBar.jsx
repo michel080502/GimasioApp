@@ -116,4 +116,4 @@ SideBar.propTypes = {
 	}).isRequired,
 };
 
-export default SideBar
+export default SideBar                                                                  

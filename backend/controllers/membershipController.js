@@ -2,9 +2,13 @@ import pool from "../config/db.js";
 
 const obtenerTodas = async (req, res) => {
   try {
-    const querySelect = "SELECT * FROM membresias";
+    const querySelect = "SELECT * FROM membresias WHERE archived = false";
     const { rows: membresias } = await pool.query(querySelect);
-    return res.status(200).json(membresias);
+    const membresiasConvertidas = membresias.map((membresia) => ({
+      ...membresia,
+      precio: parseFloat(membresia.precio),
+    }));
+    return res.status(200).json(membresiasConvertidas);
   } catch (error) {
     console.log(error);
     res
@@ -14,10 +18,9 @@ const obtenerTodas = async (req, res) => {
 };
 const crear = async (req, res) => {
   try {
-    const { nombre, beneficios, duracion_dias, precio } = req.body;
-
+    const { nombre, beneficios, duracion, precio } = req.body;
     //Valida que los campos ingresados no esten vacios
-    if (!nombre || !beneficios || !duracion_dias || !precio) {
+    if (!nombre || !beneficios || !duracion || !precio) {
       return res
         .status(400)
         .json({ msg: "Todos los campos son obligatorios." });
@@ -26,30 +29,51 @@ const crear = async (req, res) => {
     //Filtra las membresias creadas anteriormente y valida si ya existe una con el nombre ingresado
     const filterquery = "SELECT * FROM membresias WHERE nombre = $1";
     const { rows: membresiaExiste } = await pool.query(filterquery, [nombre]);
-    if (membresiaExiste.length > 0) {
-      return res
-        .status(400)
-        .json({ error: "Ya existe una membresia con ese nombre." });
+    if (membresiaExiste.length > 0 && membresiaExiste[0].archived === false) {
+      const error = new Error("Ya existe membresia con ese nombre");
+      return res.status(409).json({ msg: error.message });
+    } else if (
+      membresiaExiste.length > 0 &&
+      membresiaExiste[0].archived === true
+    ) {
+      const queryUpdateActive = `
+        UPDATE membresias
+        SET
+          beneficios = $1,
+          duracion_dias = $2,
+          precio = $3,
+          archived = $4
+        WHERE id = $5
+        RETURNING *
+      `;
+      const { rows: membresiaReactive } = await pool.query(queryUpdateActive, [
+        beneficios,
+        duracion,
+        precio,
+        false,
+        membresiaExiste[0].id,
+      ]);
+      return res.status(200).json({
+        msg: `Membresia ${membresiaReactive[0].nombre} encontrada y reactivada con estos datos`,
+      });
     }
 
     //Inserta la membresia a la base de datos
     const insertQuery = `
-        INSERT INTO membresias (nombre, beneficios, duracion_dias, precio, disponible)
-        VALUES ($1, $2, $3, $4, $5) RETURNING *;
+        INSERT INTO membresias (nombre, beneficios, duracion_dias, precio)
+        VALUES ($1, $2, $3, $4) RETURNING *;
       `;
     const { rows: nuevaMembresia } = await pool.query(insertQuery, [
       nombre,
       beneficios,
-      duracion_dias,
+      duracion,
       precio,
-      true,
     ]);
     // Emitir el nueva Membresia usando Socket.IO
-    req.io.emit("nueva-Membresia", nuevaMembresia[0]);
+    // req.io.emit("nueva-Membresia", nuevaMembresia[0]);
 
     res.status(201).json({
-      msg: "Membresia creada exitosamente",
-      membresia: nuevaMembresia[0],
+      msg: `Membresia ${nuevaMembresia[0].nombre} creada exitosamente`,
     });
   } catch (error) {
     console.error(error);
@@ -65,9 +89,8 @@ const actualizar = async (req, res) => {
     const { rows: membresia } = await pool.query(queryFind, [id]);
     //Valida si la membresia existe en la base de datos mediante su ID
     if (membresia.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "Membresia no encontrada en la base de datos" });
+      const error = new Error("Membresia no encontrada en la base de datos");
+      return res.status(404).json({ msg: error.message });
     }
     const queryUpdate = `
     UPDATE membresias
@@ -104,9 +127,8 @@ const actualizarDisponible = async (req, res) => {
     const queryFind = "SELECT * FROM membresias WHERE id = $1";
     const { rows: membresia } = await pool.query(queryFind, [id]);
     if (membresia.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "Membresia no encontrada en la base de datos" });
+      const error = new Error("Membresia no encontrada en la base de datos");
+      return res.status(404).json({ msg: error.message });
     }
     const queryUpdate = `
       UPDATE membresias
@@ -118,7 +140,7 @@ const actualizarDisponible = async (req, res) => {
       disponible !== undefined ? disponible : membresia[0].disponible,
       id,
     ]);
-    res.json({ error: "Dato de membresia modificado correctamente" });
+    res.json({ msg: "Dato de membresia modificado correctamente" });
   } catch (error) {
     console.log(error);
     res
@@ -130,15 +152,17 @@ const actualizarDisponible = async (req, res) => {
 const elimiarPorId = async (req, res) => {
   const { id } = req.params;
 
-  const deleteQuery = "DELETE FROM membresias WHERE id = $1 RETURNING *";
+  const queryFind = "SELECT * FROM membresias WHERE id = $1";
 
   try {
-    const { rows: membresiaEliminada } = await pool.query(deleteQuery, [id]);
+    const { rows: membresia } = await pool.query(queryFind, [id]);
     //Valida que la membresia se haya eliminado correctamente
-    if (membresiaEliminada.length === 0) {
+    if (membresia.length === 0) {
       const error = new Error("Membresia no encontrada en la base de datos");
-      return res.status(400).json({ msg: error.message });
+      return res.status(404).json({ msg: error.message });
     }
+    const logicalErese = `UPDATE membresias SET archived = $1 WHERE id = $2 `;
+    await pool.query(logicalErese, [true, id]);
     return res.json({ msg: "Membresia eliminada correctamente" });
   } catch (error) {
     console.log(error);
@@ -148,8 +172,10 @@ const elimiarPorId = async (req, res) => {
 
 const obtnerNumeroMembresias = async (req, res) => {
   try {
-    const querySelect = "SELECT COUNT(*) AS membresias_registradas FROM membresias";
+    const querySelect =
+      "SELECT COUNT(*) AS membresias_registradas FROM membresias";
     const { rows: totalMembresias } = await pool.query(querySelect);
+
     return res.status(200).json(totalMembresias);
   } catch (error) {
     console.log(error);
@@ -166,7 +192,7 @@ const obtenerMembresiaPorId = async (req, res) => {
     const { rows: Membresia } = await pool.query(querySelect, [id]);
     if (Membresia.length === 0) {
       const error = new Error("Membresia no encontrada en la base de datos");
-      return res.status(400).json({ error: error.message });
+      return res.status(404).json({ error: error.message });
     }
     return res.status(200).json(Membresia);
   } catch (error) {

@@ -4,151 +4,166 @@ import { RiFileExcel2Fill } from "react-icons/ri";
 import { MdDelete } from "react-icons/md";
 import MenuExport from "../ui/MenuExport";
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ConfirmDialogDelete from "../ui/confirmDialogDelete";
 import ToggleSwitch from "../ui/ToggleSwitch";
+import clienteAxios from "../../config/axios";
+import { exportDataToExcel } from "../../utils/exportDataToExcel";
 
-const TablaProductos = ({ openModal, dataType }) => {
-  // Datos simulados de productos
-  const productos = [
-    {
-      id: 1,
-      nombre: "Proteina whey de chocolate",
-      marca: "Dragon Pharma",
-      categoria: "Proteina",
-      stock: 35,
-      precio: 1200.0,
-      descuento: 200.0,
-      total: 1000.0,
-      img_secure_url: "/assets/proteina.jpg",
-    },
-    {
-      id: 2,
-      nombre: "BCAA",
-      marca: "MuscleTech",
-      categoria: "Aminoácidos",
-      stock: 15,
-      precio: 900.0,
-      descuento: 100.0,
-      total: 800.0,
-      img_secure_url: "/assets/proteina.jpg",
-    },
-    {
-      id: 3,
-      nombre: "Creatina",
-      marca: "Optimum Nutrition",
-      categoria: "Suplementos",
-      stock: 8,
-      precio: 600.0,
-      descuento: 50.0,
-      total: 550.0,
-      img_secure_url: "/assets/proteina.jpg",
-    },
-    {
-      id: 4,
-      nombre: "Glutamina",
-      marca: "Bodybuilding",
-      categoria: "Aminoácidos",
-      stock: 5,
-      precio: 500.0,
-      descuento: 0.0,
-      total: 500.0,
-      img_secure_url: "/assets/proteina.jpg",
-    },
-    {
-      id: 5,
-      nombre: "Pre-workout",
-      marca: "Cellucor",
-      categoria: "Suplementos",
-      stock: 25,
-      precio: 1100.0,
-      descuento: 150.0,
-      total: 950.0,
-      img_secure_url: "/assets/proteina.jpg",
-    },
-  ];
-
-  // Filtrar productos según el tipo de stock (dataType)
-  const filterProducts = () => {
-    if (dataType === "suficiente") {
-      return productos.filter((producto) => producto.stock > 20);
-    }
-    if (dataType === "medio") {
-      return productos.filter(
-        (producto) => producto.stock <= 20 && producto.stock >= 10
-      );
-    }
-    if (dataType === "bajo") {
-      return productos.filter((producto) => producto.stock < 10);
-    }
-    return productos; // Si dataType está vacío, muestra todos los productos
-  };
-
-  const [deleteProducto, setDeleteProducto] = useState(null);
+const TablaProductos = ({
+  productos,
+  categorias,
+  openModal,
+  dataType,
+  formatoPrecio,
+  actualizarDisponibleProductos,
+  actualizarProductos,
+}) => {
   const [optionsExport, setOptionsExport] = useState(null);
+  const [filterOptions, setFilterOptions] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState("");
+  const [deleteProducto, setDeleteProducto] = useState(null);
 
-  const handleDownload = async () => {
-    console.log("Descargando.....");
-  };
-
-  const handleSendReport = async () => {
-    console.log("Enviando.....");
-  };
-  const handleAvaliable = (newValue) => {
-    /* AQUI CREAMOS LA FUNCION PARA ENVIAR EL NUEVO ESTADO DE DISPONIBILIDAD DEBEMOS RECIBIR EL ID DE LA MEMBRESIA Y EL ESTADO PARA MANDAR LOS CAMBIOS A LA BASE abajo hay un ejemplo de como hacer esa actualizacion del dato, aun falta recibir id en esta funcion recuerda*/
-    // const updatedData = data.map((membership) =>
-    //     membership.id === id
-    //       ? { ...membership, disponible: newValue }
-    //       : membership
-    //   );
-    console.log(newValue);
-  };
-
+  // Activacion de botones exportacion y filtro
   const toggleOptionsExport = () => {
+    setFilterOptions(null);
     setOptionsExport((prev) => !prev);
   };
 
+  const toggleFilterOptions = () => {
+    setOptionsExport(null);
+    setFilterOptions((prev) => !prev);
+  };
+
+  // Definir los encabezados fuera de las funciones
+  const headers = [
+    "#",
+    "Nombre",
+    "Marca",
+    "Categoria",
+    "Stock",
+    "Disponible",
+    "Precio inicial",
+    "Descuento",
+    "Precio final"
+  ];
+
+  const generateExcelData = (productos) => {
+    return productos.map((producto, index) => ({
+      "#": index + 1,
+      Nombre: producto.nombre,
+      Marca: producto.marca,
+      Categoria: producto.categoria,
+      Stock: producto.stock,
+      Disponible: producto.disponible,
+      Precio_inicial: producto.precio,
+      descuento: producto.descuento,
+      Precio_final: producto.total,
+    }));
+  };
+
+  const handleDownload = async () => {
+    exportDataToExcel(generateExcelData(productos), headers, "reportes_clientes", "download")
+  };
+
+  const handleSendReport = async () => {
+    exportDataToExcel(generateExcelData(productos), headers, "reportes_clientes", "send")
+  };
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleCategoriaFiltro = (filtro) => {
+    setCategoriaFiltro((prev) => (filtro === prev ? !prev : filtro));
+  };
+
+  // Filtrado de productos
+  const filterProducts = () => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return productos.filter((producto) => {
+      const matchesSearch = producto.nombre
+        .toLowerCase()
+        .includes(lowerSearchTerm);
+      const matchesType =
+        (dataType === "suficiente" && producto.nivel_stock === "Suficiente") ||
+        (dataType === "medio" && producto.nivel_stock === "Medio") ||
+        (dataType === "bajo" && producto.nivel_stock === "Bajo") ||
+        dataType === "";
+      const matchesCategory = categoriaFiltro
+        ? producto.categoria.toLowerCase() === categoriaFiltro.toLowerCase()
+        : true;
+      return matchesSearch && matchesType && matchesCategory;
+    });
+  };
+
+  // Actualizar disponibilidad de producto
+  const handleAvaliable = async (id, newValue) => {
+    try {
+      const { data } = await clienteAxios.put(
+        `/producto/actualizar-disponible/${id}`,
+        {
+          disponible: newValue,
+        }
+      );
+      // Actualizar el estado localmente sin recargar
+      actualizarDisponibleProductos(id, newValue);
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Eliminar producto
   const toggleDelete = (id) => {
     setDeleteProducto(deleteProducto === id ? null : id);
   };
 
-  const handleDelete =  (id) => {
-    console.log("Eliminando producto....", id)
+  const handleDelete = async (id) => {
+    try {
+      const { data } = await clienteAxios.delete(`/producto/delete/${id}`);
+      actualizarProductos(id);
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
   };
+
+  // Agregar un useEffect para manejar cambios en categoriaFiltro
+  useEffect(() => {
+    filterProducts();
+  }, [categoriaFiltro, searchTerm, dataType]);
 
   return (
     <>
-      <div className="my-4 p-3 bg-white rounded-lg">
+      <div className="my-3 p-2 bg-white rounded-lg">
         <div className="p-2 grid md:grid-cols-4 md:gap-5">
           <div className="grid grid-cols-3 md:flex justify-between">
             <div className="col-span-2">
-              <h1 className="p-1 font-bold text-xl">Productos totales</h1>
-              {dataType !== "" && (
-                <>
-                  <p
-                    className={`pl-2 pb-1 font-semibold ${
-                      dataType === "suficiente"
-                        ? "text-green-500"
-                        : dataType === "medio"
-                        ? "text-orange-600"
-                        : "text-red-800"
-                    }`}
-                  >
-                    Stock {dataType}
-                  </p>
-
-                  {dataType === "medio" && (
-                    <p className="pl-2 pb-1 text-xs font-semibold">
-                      ¡Actualiza stock antes de que pasen a bajo stock!
-                    </p>
-                  )}
-                  {dataType === "bajo" && (
-                    <p className="pl-2 pb-1 text-xs  font-semibold">
-                      ¡Actualiza stock antes de que se acaben!
-                    </p>
-                  )}
-                </>
-              )}
+              <h1
+                className={` font-bold text-lg ${
+                  dataType === "suficiente"
+                    ? "text-green-500"
+                    : dataType === "medio"
+                    ? "text-orange-600"
+                    : dataType === "bajo"
+                    ? "text-red-800"
+                    : ""
+                }`}
+              >
+                {dataType === ""
+                  ? "Todos los productos"
+                  : `Productos con stock ${dataType}`}
+              </h1>
+              <p className="-mt-2 font-semibold text-sm ">
+                {dataType === ""
+                  ? ""
+                  : dataType === "suficiente"
+                  ? "Rango: + 20 u."
+                  : dataType === "medio"
+                  ? "Rango: 10 - 19 u."
+                  : "Rango: 1 - 9 u"}
+              </p>
             </div>
 
             <div className="flex md:hidden w-full md:w-0 items-center">
@@ -166,6 +181,8 @@ const TablaProductos = ({ openModal, dataType }) => {
               <input
                 type="text"
                 placeholder="Buscar producto..."
+                value={searchTerm}
+                onChange={handleSearch}
                 className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
               />
               <button
@@ -193,10 +210,26 @@ const TablaProductos = ({ openModal, dataType }) => {
             )}
             <button
               type="button"
+              onClick={toggleFilterOptions}
               className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
             >
               <FaFilter /> Filtro
             </button>
+            {filterOptions && (
+              <div className="absolute top-56 mt-40 -mr-24  border bg-gray-200  rounded shadow-lg w-48 z-10 flex flex-col divide-y divide-gray-400 text-base">
+                {categorias.map((categoria, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleCategoriaFiltro(categoria.nombre)}
+                    className={`p-2 hover:bg-gray-300 ${
+                      categoriaFiltro === categoria.nombre ? "bg-gray-300" : ""
+                    } text-left`}
+                  >
+                    {categoria.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -213,79 +246,100 @@ const TablaProductos = ({ openModal, dataType }) => {
                 <th className="px-5 py-2 text-gray-700 uppercase">Precio</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Descuento</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Total</th>
-                <th className="px-5 py-2 text-gray-700 uppercase">Disponible</th>
+                <th className="px-5 py-2 text-gray-700 uppercase">
+                  Disponible
+                </th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Acciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-center items-center">
-              {filterProducts().map((producto) => (
-                <tr key={producto.id} className="hover:bg-gray-100">
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                    {producto.id}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    <img
-                      className="w-16 rounded-full ring-2 ring-red-800 m-auto"
-                      src={producto.img_secure_url}
-                      alt={producto.nombre}
-                    />
-                  </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                    {producto.nombre}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                    {producto.marca}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                    {producto.categoria}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {producto.stock}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    ${producto.precio}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    ${producto.descuento}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    ${producto.total}
-                  </td>
-                  <td className="px-6 py-4 text-sm  text-gray-700">
-                    <ToggleSwitch avaliable={true} 
-                    onToggle={(newValue) =>{
-                      handleAvaliable(newValue)
-                    }} />
-                  </td>
-                  <td className="px-6 py-4 text-sm h-full">
-                    <div className="flex items-center justify-center gap-4 h-full">
-                      <button
-                        className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
-                        onClick={() => {
-                          openModal("editar", producto.id);
-                        }}
-                      >
-                        <FaUserEdit className="text-3xl" />
-                      </button>
-                      <button
-                        className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
-                        onClick={() => {
-                          toggleDelete(producto.id);
-                        }}
-                      >
-                        <MdDelete className="text-3xl" />
-                      </button>
-                      {deleteProducto === producto.id && (
-                        <ConfirmDialogDelete
-                          message={`¿Seguro que deseas elminar el producto ${producto.nombre}`}
-                          onCancel={() =>{ setDeleteProducto(null)}}
-                          onConfirm={() => handleDelete(producto.id)}
-                        />
-                      )}
-                    </div>
+            <tbody className="bg-white divide-y divide-gray-200 text-center font-semibold items-center">
+              {filterProducts().length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="11"
+                    className="px-6 py-4 text-center text-gray-600 text-lg font-semibold"
+                  >
+                    No hay datos que mostrar, elimine filtro y vuelva a
+                    intentarlo.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filterProducts().map((producto, index) => (
+                  <tr key={index} className="hover:bg-gray-100">
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      {index + 1}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      <img
+                        className="w-16 rounded-full ring-2 ring-red-800 m-auto"
+                        src={producto.img_secure_url}
+                        alt={producto.nombre}
+                      />
+                    </td>
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      {producto.nombre}
+                    </td>
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      {producto.marca}
+                    </td>
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      {producto.categoria}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      {producto.stock}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      {formatoPrecio.format(producto.precio)}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      {formatoPrecio.format(producto.descuento)}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      {formatoPrecio.format(producto.total)}
+                    </td>
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      <ToggleSwitch
+                        avaliable={
+                          producto.disponible === true ||
+                          producto.disponible === "true"
+                        }
+                        onToggle={(newValue) =>
+                          handleAvaliable(producto.id, newValue)
+                        }
+                      />
+                    </td>
+                    <td className="px-3 py-3 text-sm h-full">
+                      <div className="flex items-center justify-center gap-4 h-full">
+                        <button
+                          className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
+                          onClick={() => {
+                            openModal("editar", producto);
+                          }}
+                        >
+                          <FaUserEdit className="text-3xl" />
+                        </button>
+                        <button
+                          className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
+                          onClick={() => {
+                            toggleDelete(producto.id);
+                          }}
+                        >
+                          <MdDelete className="text-3xl" />
+                        </button>
+                        {deleteProducto === producto.id && (
+                          <ConfirmDialogDelete
+                            message={`¿Seguro que deseas elminar el producto ${producto.nombre}`}
+                            onCancel={() => {
+                              setDeleteProducto(null);
+                            }}
+                            onConfirm={() => handleDelete(producto.id)}
+                          />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -295,8 +349,32 @@ const TablaProductos = ({ openModal, dataType }) => {
 };
 
 TablaProductos.propTypes = {
+  productos: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number,
+      nombre: PropTypes.string,
+      marca: PropTypes.string,
+      categoria: PropTypes.string,
+      stock: PropTypes.number,
+      precio: PropTypes.number,
+      descuento: PropTypes.number,
+      total: PropTypes.number,
+      img_public_id: PropTypes.string,
+      img_secure_url: PropTypes.string,
+      disponible: PropTypes.bool,
+      nivel_stock: PropTypes.string,
+    })
+  ),
+  categorias: PropTypes.arrayOf(
+    PropTypes.shape({
+      nombre: PropTypes.string,
+    })
+  ),
   openModal: PropTypes.func.isRequired,
   dataType: PropTypes.string,
+  formatoPrecio: PropTypes.instanceOf(Intl.NumberFormat),
+  actualizarDisponibleProductos: PropTypes.func,
+  actualizarProductos: PropTypes.func,
 };
 
 export default TablaProductos;
