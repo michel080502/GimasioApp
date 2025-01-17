@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 import { uploadImage, deleteImage } from "../helpers/cloudinary.js";
 import fs from "fs-extra";
 
-const crear = async (req, res) => {
+const crear = async (req, res, next) => {
   const { nombre, marca, categoria, stock, precio, descuento, total } =
     req.body;
   console.log(req.body);
