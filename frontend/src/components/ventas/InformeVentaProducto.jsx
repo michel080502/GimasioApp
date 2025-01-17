@@ -5,9 +5,9 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale"; // Importamos el idioma español
 
 const InformeVentaProducto = ({ closeModal }) => {
-  const formatoPrecio = new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
+  const formatoPrecio = new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -80,14 +80,16 @@ const InformeVentaProducto = ({ closeModal }) => {
                     </th>
                     <td className="py-2 px-3">Proteina whey</td>
                     <td className="py-2 px-3">Proteina</td>
-                    <td className="py-2 px-3">{formatoPrecio.format(500.00)}</td>
-                    <td className="py-2 px-3">{formatoPrecio.format(1000.00)}</td>
+                    <td className="py-2 px-3">{formatoPrecio.format(500.0)}</td>
+                    <td className="py-2 px-3">
+                      {formatoPrecio.format(1000.0)}
+                    </td>
                   </tr>
                 </tbody>
               </table>
               <div className="flex justify-between p-3">
                 <p>Total de la compra:</p>
-                <span className="text-2xl">{formatoPrecio.format(2000.00)}</span>
+                <span className="text-2xl">{formatoPrecio.format(2000.0)}</span>
               </div>
             </div>
           </div>

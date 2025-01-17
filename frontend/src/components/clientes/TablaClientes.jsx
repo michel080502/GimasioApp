@@ -3,13 +3,16 @@ import useSocket from "../../hooks/useSocket"; // Importa el hook
 import clienteAxios from "../../config/axios";
 import PropTypes from "prop-types";
 
+import { format } from "date-fns";
+import { es } from "date-fns/locale"; // Importamos el idioma español
+
 import { HiSearchCircle } from "react-icons/hi";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import { FaUserEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import ConfirmDialogDelete from "../ui/confirmDialogDelete";
 import MenuExport from "../ui/MenuExport";
-import exportToExcel from "../../utils/exportToExcel";
+import { exportDataToExcel } from "../../utils/exportDataToExcel";
 
 const TablaClientes = ({ clientes, setClientes, openModal }) => {
   const [deleteCliente, setDeleteCliente] = useState(null);
@@ -34,7 +37,6 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
     "Nombre",
     "Apellido Paterno",
     "Apellido Materno",
-    "Estado",
     "Matrícula",
     "Teléfono",
     "Email",
@@ -46,7 +48,6 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
       Nombre: cliente.nombre,
       Apellido_Paterno: cliente.apellido_paterno,
       Apellido_Materno: cliente.apellido_materno,
-      Estado: cliente.estado,
       Matrícula: cliente.matricula,
       Teléfono: cliente.telefono,
       Email: cliente.email,
@@ -54,77 +55,11 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
   };
 
   const handleDownload = async () => {
-    try {
-      const formattedData = generateExcelData(filteredClientes);
-      const buffer = await exportToExcel({
-        data: formattedData,
-        tableHeaders: headers,
-      });
-
-      const currentDate = new Date();
-      const formattedDate = currentDate
-        .toLocaleString("es-MX", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-        .replace(/[^\w\s]/gi, "-"); // Reemplazar caracteres no válidos
-
-      const blob = new Blob([buffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `reporte_clientes_${formattedDate}.xlsx`;
-      link.click();
-
-      setOptionsExport(false);
-    } catch (error) {
-      console.error("Error al generar el reporte de Excel:", error);
-    }
+    exportDataToExcel(generateExcelData(filteredClientes), headers, "reportes_clientes", "download")
   };
 
   const handleSendReport = async () => {
-    try {
-      // Generar la fecha en el formato deseado
-      const currentDate = new Date();
-      const formattedDate = currentDate
-        .toLocaleString("es-MX", {
-          dateStyle: "short",
-          timeStyle: "short",
-        })
-        .replace(/\//g, "-")
-        .replace(/:/g, "_"); // Formato: "dd-MM-yy_HH-mm"
-
-      const formattedData = generateExcelData(filteredClientes);
-      const buffer = await exportToExcel({
-        data: formattedData,
-        tableHeaders: headers,
-      });
-
-      // Crear FormData
-      const formData = new FormData();
-
-      // Crear un Blob con el contenido del archivo
-      const fileBlob = new Blob([buffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-
-      const fileName = `reporte_clientes_${formattedDate}.xlsx`;
-
-      formData.append("file", fileBlob, fileName);
-
-      const { data } = await clienteAxios.post("/reporte-clientes/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      console.log(data);
-      setOptionsExport(false);
-    } catch (error) {
-      console.error("Error al generar o enviar el reporte:", error);
-    }
+    exportDataToExcel(generateExcelData(filteredClientes), headers, "reportes_clientes", "send")
   };
 
   const handleNewClient = (nuevoCliente) => {
@@ -265,13 +200,17 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
                     {cliente.telefono}
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                    {cliente.nacimiento}
+                  {format(
+                        new Date(cliente.nacimiento),
+                        "dd 'de' MMMM, yyyy",
+                        { locale: es }
+                      )}
                   </td>
 
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
                     {cliente.email}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">
                     {cliente.matricula}
                   </td>
                   <td className="px-6 py-4 text-sm h-full">

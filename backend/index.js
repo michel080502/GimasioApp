@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import morgan from "morgan"
 import cors from "cors";
 import { Server as SocketServer } from "socket.io";
 import http from "http"; // Importar el servidor HTTP
@@ -7,6 +8,7 @@ import pool from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import productRouter from "./routes/productRoutes.js";
+import memberShipRoute from "./routes/memberShipRoute.js"
 
 dotenv.config();
 const app = express();
@@ -24,6 +26,9 @@ io.on('connection', socket => {
     console.log(data);
   })
 })
+
+
+app.use(morgan('dev'));
 
 app.use(express.json());
 const whitelist = [process.env.FRONTEND_URL];
@@ -50,6 +55,7 @@ app.use((req, res, next) => {
 app.use("/api/admin", adminRoutes);
 app.use("/api/cliente", clientRoutes);
 app.use("/api/producto", productRouter);
+app.use("/api/membresia", memberShipRoute)
 
 const PORT = process.env.PORT || 4000;
 

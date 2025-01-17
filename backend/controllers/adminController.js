@@ -24,8 +24,8 @@ const registrar = async (req, res) => {
     const token = generarId();
 
     const insertQuery = `
-			INSERT INTO admins (nombre, apellido, email, telefono, password, token, confirmado)
-			VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+			INSERT INTO admins (nombre, apellido_paterno, apellido_materno, email, telefono, password, token, confirmado)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
 		`;
 
     const { rows: newAdmin } = await pool.query(insertQuery, [
@@ -59,8 +59,8 @@ const perfil = (req, res) => {
   res.json({
     id: admin.id,
     nombre: admin.nombre,
-    apellidoPaterno: admin.apellidoPaterno,
-    apellidoMaterno: admin.apellidoMaterno,
+    apellidoPaterno: admin.apellido_paterno,
+    apellidoMaterno: admin.apellido_materno,
     email: admin.email,
   });
 };
@@ -124,8 +124,8 @@ const autenticar = async (req, res) => {
     res.json({
       id: usuario.id, // Usamos 'id' porque en PostgreSQL es el nombre del campo
       nombre: usuario.nombre,
-      apellidoPaterno: usuario.apellidoPaterno,
-      apellidoMaterno: usuario.apellidoMaterno,
+      apellidoPaterno: usuario.apellido_paterno,
+      apellidoMaterno: usuario.apellido_materno,
       email: usuario.email,
       token,
     });

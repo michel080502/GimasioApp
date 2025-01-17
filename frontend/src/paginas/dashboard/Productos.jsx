@@ -6,19 +6,78 @@ import Modal from "../../components/Modal";
 import FormRegistro from "../../components/productos/FormRegistro";
 import TablaProductos from "../../components/productos/TablaProductos";
 import FormUpdate from "../../components/productos/FormUpdate";
+import Categorias from "../../components/productos/Categorias";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import clienteAxios from "../../config/axios";
 
 const Productos = () => {
+  const [categorias, setCategorias] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [selectedProd, setSelectedProd] = useState(null);
+  const [loadingCategorias, setLoadingCategorias] = useState(true);
+  const [reload, setReload] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [dataType, setDataType] = useState("");
+
+  const formatoPrecio = new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  useEffect(() => {
+    const getCategorias = async () => {
+      try {
+        const { data } = await clienteAxios.get("/producto/categorias");
+        setCategorias(data);
+      } catch (error) {
+        console.log("Error al obtener categorias", error);
+        setCategorias([]);
+      } finally {
+        setLoadingCategorias(false);
+      }
+    };
+    const getProductos = async () => {
+      try {
+        const { data } = await clienteAxios.get("/producto/");
+        setProductos(data);
+      } catch (error) {
+        console.log("Error al obtener categorias", error);
+        setProductos([]);
+      }
+    };
+    getCategorias();
+    getProductos();
+  }, [reload]);
+
+  const recargarDatos = () => setReload((prev) => !prev);
+
+  const actualizarCategorias = (id) => {
+    setCategorias((prev) => prev.filter((categoria) => categoria.id !== id));
+  };
+
+  const actualizarProductos = (id) => {
+    setProductos((prev) => prev.filter((categoria) => categoria.id !== id));
+  };
+
+  const actualizarDisponibleProductos = (id, newValue) => {
+    setProductos((prev) =>
+      prev.map((producto) =>
+        producto.id === id ? { ...producto, disponible: newValue } : producto
+      )
+    );
+  };
 
   const typeTable = (type) => {
     setDataType((prev) => (prev === type ? "" : type));
   };
-  const openModal = (modalName) => {
-    setActiveModal(modalName);
+
+  const openModal = (modalName, prod = null) => {
+    setActiveModal(modalName), setSelectedProd(prod);
   };
+
   const closeModal = () => setActiveModal(null);
 
   return (
@@ -29,14 +88,14 @@ const Productos = () => {
         </h1>
         <div className="flex gap-3">
           <button
-            className="button flex gap-2 items-center text-lg "
+            className="text-lg bg-gray-800 text-white px-2 py-1 rounded-md hover:bg-black transform duration-300 flex items-center gap-2 "
             onClick={() => openModal("registrar")}
           >
             <IoMdAddCircle />
             Agregar producto
           </button>
           <button
-            className="button flex gap-2 items-center text-lg "
+            className="text-lg bg-gray-800 text-white px-2 py-1 rounded-md hover:bg-black transform duration-300 flex items-center gap-2"
             onClick={() => openModal("categoria")}
           >
             <IoMdAddCircle />
@@ -46,9 +105,17 @@ const Productos = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4 ">
-        <CardInforme typeTable={typeTable} />
+        <CardInforme typeTable={typeTable} productos={productos} />
       </div>
-      <TablaProductos openModal={openModal} dataType={dataType} />
+      <TablaProductos
+        productos={productos}
+        categorias={categorias}
+        openModal={openModal}
+        dataType={dataType}
+        formatoPrecio={formatoPrecio}
+        actualizarDisponibleProductos={actualizarDisponibleProductos}
+        actualizarProductos={actualizarProductos}
+      />
       {/* Modal de agregar productos */}
       {activeModal === "registrar" && (
         <Modal closeModal={closeModal}>
@@ -58,7 +125,7 @@ const Productos = () => {
               <IoMdCloseCircle className="text-2xl" />
             </button>
           </div>
-          <FormRegistro />
+          <FormRegistro categorias={categorias} formatoPrecio={formatoPrecio} recargarDatos={recargarDatos} />
         </Modal>
       )}
       {/* Modal de registro */}
@@ -71,7 +138,11 @@ const Productos = () => {
             </button>
           </div>
 
-          <FormUpdate />
+          <FormUpdate
+            selectedProd={selectedProd}
+            categorias={categorias}
+            formatoPrecio={formatoPrecio}
+          />
         </Modal>
       )}
       {/* Modal de registro */}
@@ -83,16 +154,12 @@ const Productos = () => {
               <IoMdCloseCircle className="text-2xl" />
             </button>
           </div>
-
-          <form className="grid p-3 ">
-            <label className=" m-1 font-bold">Nombre categoria</label>
-            <input
-              className="border p-2 rounded-lg"
-              type="text"
-              placeholder="ejm: Proteina"
-            />
-            <button type="submit" className="mt-4 button w-32 m-auto">Guardar</button>
-          </form>
+          <Categorias
+            categorias={categorias}
+            loadingCategorias={loadingCategorias}
+            recargarDatos={recargarDatos}
+            actualizarCategorias={actualizarCategorias}
+          />
         </Modal>
       )}
     </div>

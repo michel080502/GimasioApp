@@ -1,38 +1,105 @@
 import { useState, useEffect } from "react";
-const FormUpdate = () => {
+import clienteAxios from "../../config/axios";
+import PropTypes from "prop-types";
+import Alerta from "../Alerta";
+const FormUpdate = ({
+  selectedProd,
+  categorias,
+  formatoPrecio,
+}) => {
   const [showOptions, setShowOptions] = useState(false);
-  const [categoria, setCategoria] = useState("");
-  const [categorias, setCategorias] = useState([]); // Almacena las categorías obtenidas
-
-  // Simula la carga de categorías desde la base de datos
-  useEffect(() => {
-    const obtenerCategorias = async () => {
-      try {
-        // Reemplaza este array con la llamada a tu API
-        const data = [
-          { id: 1, nombre: "Proteína" },
-          { id: 2, nombre: "Vitaminas" },
-          { id: 3, nombre: "Accesorios" },
-        ];
-        setCategorias(data); // Almacena las categorías
-      } catch (error) {
-        console.error("Error al obtener categorías:", error);
-      }
-    };
-
-    obtenerCategorias();
-  }, []);
+  const [producto, setProducto] = useState(selectedProd);
+  const [alerta, setAlerta] = useState({ msg: "", error: false });
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
 
   const toggleOptions = () => {
     setShowOptions((prev) => !prev);
   };
-  const generarTotal = () => {
-    console.log("generando total...");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProducto((prev) => ({
+      ...prev,
+      [name]:
+        name === "precio" || name === "descuento" || name === "stock"
+          ? value === ""
+            ? ""
+            : parseFloat(value) || 0
+          : value,
+    }));
   };
+
+  const validarActualizacion = (data) => {
+    if (
+      data.nombre === selectedProd.nombre &&
+      data.marca === selectedProd.marca &&
+      data.categoria_id === selectedProd.categoria_id &&
+      data.stock === selectedProd.stock &&
+      data.precio === selectedProd.precio &&
+      data.descuento === selectedProd.descuento
+    ) {
+      return "No se realizaron cambios en el producto.";
+    }
+    if (data.stock <= 0) return "El stock debe ser mayor a 0.";
+    if (data.precio <= 0) return "El precio debe ser mayor a 0.";
+    if (data.descuento < 0) return "El descuento no puede ser negativo.";
+    if (data.descuento >= data.precio)
+      return "El descuento no puede ser igual o mayor al precio.";
+
+    return null; // Si no hay errores
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errorMsg = validarActualizacion(producto);
+    if (errorMsg) {
+      mostrarAlerta(errorMsg, true);
+      return;
+    }
+
+    try {
+      const { data } = await clienteAxios.put(
+        `/producto/actualizar/${producto.id}`,
+        producto
+      );
+      mostrarAlerta(data.msg, false);
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
+    }
+  };
+
+  useEffect(() => {
+    const { precio, descuento } = producto;
+
+    // Asegurarse de que descuento no sea mayor que el precio
+    if (precio > 0 && descuento >= 0 && descuento < precio) {
+      const total = parseFloat(precio) - parseFloat(descuento);
+      setProducto((prev) => ({
+        ...prev,
+        total: total >= 0 ? total : 0,
+      }));
+    } else {
+      setProducto((prev) => ({
+        ...prev,
+        total: 0,
+      }));
+    }
+  }, [producto.precio, producto.descuento]); // Dependencias de las propiedades específicas
+
+  const { msg } = alerta;
   return (
     <>
-      <form className=" border pb-2 grid gap-2 justify-center max-w-screen-sm  overflow-y-auto">
-        <div className="m-5 grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6 relative">
+      <form
+        className=" border pb-2 grid justify-center max-w-screen-sm  overflow-y-auto"
+        onSubmit={handleSubmit}
+      >
+        {msg && <Alerta alerta={alerta} />}
+        <div className="m-3 grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-3 relative">
           <div className="grid grid-cols-1 md:grid-rows-3 order-2 ">
             <button
               type="button"
@@ -42,28 +109,16 @@ const FormUpdate = () => {
               <img
                 alt="preview"
                 className="w-full h-full object-cover rounded-lg"
-                src="/assets/proteina.jpg"
+                src={producto.img_secure_url}
               />
             </button>
-            <button
-              type="button"
-              className="text-center text-3xl w-48  font-extrabold  justify-center "
-              onClick={generarTotal}
-            >
-              <p className="flex gap-1 absolut justify-center">
-                $
-                <input
-                  className="w-28 text-center rounded"
-                  type="text"
-                  placeholder="200.00"
-                  disabled
-                />
+            <div className="grid text-center  absolut  font-bold ">
+              <p className="text-3xl">
+                {formatoPrecio.format(producto.total || 0)}
               </p>
+              <p className="text-sm text-gray-600">precio total</p>
+            </div>
 
-              <p className="text-sm py-2 text-gray-500 hover:text-gray-600">
-                Presiona para calcular total
-              </p>
-            </button>
             {/* Opcion para cargar imagen */}
             {showOptions && (
               <div className="absolute  mt-2 bg-rose-300 border border-red-900 rounded-lg shadow-lg w-48 z-10">
@@ -74,40 +129,49 @@ const FormUpdate = () => {
             )}
           </div>
 
-          <div className="order-1 col-span-2 grid gap-2 grid-cols-2">
-            <div className=" grid col-span-2">
+          <div className="order-1 text-sm col-span-2 grid gap-2 grid-cols-3">
+            <div className=" grid col-span-3">
               <label className=" p-1 font-bold">Nombre</label>
               <input
                 className="border p-2 rounded-lg"
                 type="text"
+                name="nombre"
+                value={producto.nombre || ""}
+                onChange={handleChange}
                 placeholder="ejm: Proteina en polvo"
               />
             </div>
-            <div className=" grid col-span-2 ">
+            <div className=" grid col-span-1 ">
               <label className=" p-1 font-bold">Marca</label>
               <input
-                className="border p-2 rounded-lg"
+                className="border p-1 rounded-lg"
                 type="text"
+                name="marca"
+                value={producto.marca}
+                onChange={handleChange}
                 placeholder="ejm: DragonPharma"
               />
             </div>
-            <div className="grid gap-2">
-              <label className="p-1 font-bold">Categoría</label>
+            <div className="grid col-span-2 gap-1 ml-12">
+              <label htmlFor="categoria" className="p-1 font-bold">
+                Categoría
+              </label>
               <select
-                className="border p-2 rounded-lg "
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
+                name="categoria_id"
+                className="border p-2 rounded-lg w-full"
+                value={producto.categoria_id || ""}
+                onChange={handleChange}
               >
                 <option value="">--Selecciona--</option>
-                {categorias.map((cat) => (
-                  <option
-                    key={cat.id}
-                    value={cat.id}
-                    className="hover:bg-green-600 focus:bg-green-600"
-                  >
-                    {cat.nombre}
-                  </option>
-                ))}
+                {Array.isArray(categorias) && categorias.length > 0 ? (
+                  categorias.map((categoria, index) => (
+                    <option key={index} value={categoria.id}>
+                      {categoria.nombre}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No hay categorías en el sistema</option>
+                )}
               </select>
             </div>
 
@@ -116,9 +180,12 @@ const FormUpdate = () => {
               <div className="relative">
                 <input
                   className="border p-2  rounded-lg w-full"
+                  value={producto.stock || ""}
+                  name="stock"
+                  onChange={handleChange}
                   type="number"
-                  min={0}
-                  step={0.01}
+                  min="0"
+                  step="any"
                   placeholder="ejm: 300.00"
                 />
               </div>
@@ -131,9 +198,11 @@ const FormUpdate = () => {
                 </span>
                 <input
                   className="border p-2 pl-8 rounded-lg w-full"
+                  value={producto.precio || ""}
+                  name="precio"
+                  step="any"
+                  onChange={handleChange}
                   type="number"
-                  min={0}
-                  step={0.01}
                   placeholder="ejm: 300.00"
                 />
               </div>
@@ -148,16 +217,55 @@ const FormUpdate = () => {
                 <input
                   className="border p-2 pl-8 rounded-lg w-full"
                   type="number"
+                  min="0"
+                  step="any"
+                  name="descuento"
+                  value={producto.descuento || ""}
+                  onChange={handleChange}
                   placeholder="ejm: 100.00"
                 />
               </div>
             </div>
+            <p className="col-span-3 text-xs">
+              En <span className="font-bold">precio y descuento</span> no
+              olvides agregar <span className="font-bold"> {".00"}</span> al
+              final para no tener problemas al calcular el total
+            </p>
           </div>
         </div>
-        <button type="submit" className="button w-32 m-auto">Guardar</button>
+        <button
+          type="submit"
+          className="text-base bg-gray-800 text-white px-2 py-1 rounded-md hover:bg-black transform duration-300 m-auto"
+        >
+          Guardar
+        </button>
       </form>
     </>
   );
+};
+
+FormUpdate.propTypes = {
+  selectedProd: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    nombre: PropTypes.string.isRequired,
+    marca: PropTypes.string.isRequired,
+    categoria_id: PropTypes.number.isRequired,
+    stock: PropTypes.number.isRequired,
+    precio: PropTypes.number.isRequired,
+    descuento: PropTypes.number.isRequired,
+    total: PropTypes.number,
+    img_public_id: PropTypes.string,
+    img_secure_url: PropTypes.string,
+    disponible: PropTypes.bool.isRequired,
+    nivel_stock: PropTypes.string,
+  }).isRequired,
+  categorias: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      nombre: PropTypes.string.isRequired,
+    })
+  ),
+  formatoPrecio: PropTypes.instanceOf(Intl.NumberFormat).isRequired,
 };
 
 export default FormUpdate;

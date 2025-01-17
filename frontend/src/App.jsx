@@ -16,6 +16,7 @@ import { AuthProvider } from "./context/AuthProvider";
 import Entrenadores from "./paginas/dashboard/Entrenadores";
 import Ventas from "./paginas/dashboard/Ventas";
 import Configuracion from "./paginas/dashboard/Configuracion";
+import Error404 from "./paginas/Error404";
 
 function App() {
   return (
@@ -38,6 +39,9 @@ function App() {
             <Route path="ventas" element={<Ventas />} />
             <Route path="configuracion" element={<Configuracion />} />
           </Route>
+
+          {/* Ruta para manejar 404 */}
+          <Route path="*" element={<Error404 />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

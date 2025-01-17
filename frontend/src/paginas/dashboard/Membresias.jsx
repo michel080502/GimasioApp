@@ -8,18 +8,41 @@ import TablaMembresias from "../../components/membresias/TablaMembresias";
 import FormRegistro from "../../components/membresias/FormRegistro";
 import FormUpdate from "../../components/membresias/FormUpdate";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import clienteAxios from "../../config/axios";
 
 const Membresias = () => {
+  const [membresias, setMembresias] = useState([]);
   const [activeModal, setActiveModal] = useState(null);
   const [tablaDatos, setTablaDatos] = useState("");
+
+  const formatoPrecio = new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
   const openModal = (modalName) => {
     setActiveModal(modalName);
   };
   const typeTable = (type) =>
     setTablaDatos((prev) => (prev === type ? "" : type));
+
   const closeModal = () => setActiveModal(null);
+
+  useEffect(() => {
+    const getMembresias = async () => {
+      try {
+        const { data } = await clienteAxios.get("/membresia/");
+        setMembresias(data);
+      } catch (error) {
+        console.error("Error al obtener membresias", error);
+        setMembresias([]);
+      } 
+    };
+    getMembresias();
+  }, []);
   return (
     <div className="p-5">
       <div className="p-4 flex justify-between items-center">
@@ -27,7 +50,7 @@ const Membresias = () => {
           <span className="text-gray-600">Lista /</span> Membresias
         </h1>
         <button
-          className="button flex gap-2 items-center text-lg "
+          className="text-lg bg-gray-800 text-white px-2 py-1 rounded-md hover:bg-black transform duration-300 flex items-center gap-2 "
           onClick={() => openModal("registrar")}
         >
           <IoMdAddCircle />
@@ -39,8 +62,16 @@ const Membresias = () => {
         <CardInforme typeTable={typeTable} />
       </div>
       {/* Tablas informes */}
-      {tablaDatos === "" && <TablaMembresias openModal={openModal} />}
-      {tablaDatos !== "" && <TablaCompras tipo ={tablaDatos} openModal={openModal}/>}
+      {tablaDatos === "" && (
+        <TablaMembresias
+          openModal={openModal}
+          membresias={membresias}
+          formatoPrecio={formatoPrecio}
+        />
+      )}
+      {tablaDatos !== "" && (
+        <TablaCompras tipo={tablaDatos} openModal={openModal} />
+      )}
 
       {/* Modal de agregar productos */}
       {activeModal === "registrar" && (
@@ -67,7 +98,6 @@ const Membresias = () => {
           <FormUpdate />
         </Modal>
       )}
-      
     </div>
   );
 };

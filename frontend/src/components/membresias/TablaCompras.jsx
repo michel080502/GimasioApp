@@ -8,7 +8,9 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale"; // Importamos el idioma español
 import PropTypes from "prop-types";
 import MenuExport from "../ui/MenuExport";
-import ModalRenovacion from "./ModalRenovacion";
+import Modal from "../Modal";
+
+import ViewRenovacion from "./ModalRenovacion";
 
 import { useState } from "react";
 const TablaCompras = ({ tipo }) => {
@@ -274,7 +276,9 @@ const TablaCompras = ({ tipo }) => {
                       )}
                       {/* MODAL RENOVACION */}
                       {activeModal === item.id && ( // Verifica si el modal es para este item
-                        <ModalRenovacion closeModal={closeModal} />
+                        <Modal closeModal={closeModal}>
+                          <ViewRenovacion closeModal={closeModal} />
+                        </Modal>
                       )}
 
                       <button

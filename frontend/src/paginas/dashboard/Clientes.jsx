@@ -42,7 +42,7 @@ const Clientes = () => {
           <span className="text-gray-600">Lista /</span> Clientes
         </h1>
         <button
-          className="button flex gap-2 items-center text-lg "
+          className="text-lg bg-gray-800 text-white px-2 py-1 rounded-md hover:bg-black transform duration-300 flex items-center gap-2 "
           onClick={() => openModal("registrar")}
         >
           {" "}

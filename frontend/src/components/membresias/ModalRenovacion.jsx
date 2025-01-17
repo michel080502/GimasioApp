@@ -4,7 +4,7 @@ import { IoMdCloseCircle } from "react-icons/io";
 import { useState } from "react";
 import PropTypes from "prop-types";
 
-const ModalRenovacion = ({ closeModal }) => {
+const ViewRenovacion = ({ closeModal }) => {
   const [vista, setVista] = useState("opciones");
   const [alerta, setAlerta] = useState({ msg: "", error: false });
   const [seleccionada, setSeleccionada] = useState(null);
@@ -14,25 +14,25 @@ const ModalRenovacion = ({ closeModal }) => {
     setSeleccionada(seleccionada === id ? null : id); // Alternar selección
   };
 
-  const handleSubmit = (e) =>{
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if(!seleccionada) {
-        setAlerta({
-            msg: "Selecciona una membresia antes de renovar",
-            error: true,
-        });
-        return;
+    if (!seleccionada) {
+      setAlerta({
+        msg: "Selecciona una membresia antes de renovar",
+        error: true,
+      });
+      return;
     }
-    try{
-        // Logica para la renovación
-        setVista("mensaje")
-    } catch{
-        setAlerta({
-            msg: "Error al renovar",
-            error: true,
-          });
+    try {
+      // Logica para la renovación
+      setVista("mensaje");
+    } catch {
+      setAlerta({
+        msg: "Error al renovar",
+        error: true,
+      });
     }
-  }
+  };
   const { msg } = alerta;
   // Lista ficticia de membresías
   const membresias = [
@@ -86,13 +86,13 @@ const ModalRenovacion = ({ closeModal }) => {
               <h1>Datos del cliente</h1>
               <div className="flex gap-6">
                 <button
-                  className="bg-stone-800 bg-opacity-80 text-white p-2 rounded-md hover:bg-opacity-100"
+                  className="bg-gray-700 text-sm text-white py-1 px-2 rounded-lg hover:bg-black transform duration-200 m-auto"
                   onClick={() => setVista("mensaje")}
                 >
                   Misma membresia
                 </button>
                 <button
-                  className="bg-blue-800 bg-opacity-80 text-white p-2 rounded-md hover:bg-opacity-100"
+                  className="bg-blue-700 text-sm text-white py-1 px-2 rounded-lg hover:bg-blue-900 transform duration-200 m-auto"
                   onClick={() => setVista("formulario")}
                 >
                   Elegir nueva membresia
@@ -128,7 +128,7 @@ const ModalRenovacion = ({ closeModal }) => {
                     >
                       <div className="text-left">
                         <h3 className="text-base font-semibold">{m.nombre}</h3>
-                        <p className="font-semibold" >Beneficios:</p>
+                        <p className="font-semibold">Beneficios:</p>
                         <ul className="list-disc ml-5">
                           {m.beneficios.map((b, index) => (
                             <li key={index}>{b}</li>
@@ -136,13 +136,23 @@ const ModalRenovacion = ({ closeModal }) => {
                         </ul>
                       </div>
                       <div className="grid gap-1 items-center">
-                        <p><span className="font-semibold">Duración:</span>  {m.duracion_dias} días</p>
-                        <p> <span className="font-semibold">Precio:</span> ${m.precio.toFixed(2)}</p>
+                        <p>
+                          <span className="font-semibold">Duración:</span>{" "}
+                          {m.duracion_dias} días
+                        </p>
+                        <p>
+                          {" "}
+                          <span className="font-semibold">Precio:</span> $
+                          {m.precio.toFixed(2)}
+                        </p>
                       </div>
                     </div>
                   ))}
               </div>
-              <form className="flex gap-6 justify-center" onSubmit={handleSubmit}>
+              <form
+                className="flex gap-6 justify-center"
+                onSubmit={handleSubmit}
+              >
                 <button
                   className="bg-stone-800 bg-opacity-80 text-white p-2 rounded-md hover:bg-opacity-100"
                   type="submit"
@@ -189,8 +199,8 @@ const ModalRenovacion = ({ closeModal }) => {
   );
 };
 
-ModalRenovacion.propTypes = {
+ViewRenovacion.propTypes = {
   closeModal: PropTypes.func,
 };
 
-export default ModalRenovacion;
+export default ViewRenovacion;

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import Alerta from "../Alerta"
 import clienteAxios from "../../config/axios"
 import PropTypes from  'prop-types'
+
 const FormUpdate = ({id}) => {
 	const [ cliente, setCliente ] = useState(null);
 	const [ cargando, setCargando ] = useState(true);

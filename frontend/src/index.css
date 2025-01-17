@@ -6,6 +6,9 @@
   .transition-delay {
     transition-delay: 0.3s;
   }
+  .no-select {
+    user-select: none; /* Evita la selección de texto */
+  }
 }
 
 @layer components {
