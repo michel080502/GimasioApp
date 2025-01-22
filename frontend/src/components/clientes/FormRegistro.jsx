@@ -4,8 +4,9 @@ import { FaRegFileImage } from "react-icons/fa";
 import { useState, useRef } from "react";
 import Alerta from "../Alerta";
 import clienteAxios from "../../config/axios";
+import PropTypes from "prop-types";
 
-const FormRegistro = () => {
+const FormRegistro = ({ reloadContent }) => {
   /* Campos formulario */
   const [nombre, setNombre] = useState("");
   const [apellidoPaterno, setApellidoPaterno] = useState("");
@@ -72,6 +73,7 @@ const FormRegistro = () => {
         },
       });
 
+      reloadContent();
       setAlerta({
         msg: "Cliente creado correctamente",
         error: false,
@@ -417,6 +419,10 @@ const FormRegistro = () => {
       </form>
     </>
   );
+};
+
+FormRegistro.propTypes = {
+  reloadContent: PropTypes.func,
 };
 
 export default FormRegistro;

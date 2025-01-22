@@ -13,6 +13,7 @@ import clienteAxios from "../../config/axios";
 
 const Membresias = () => {
   const [membresias, setMembresias] = useState([]);
+  const [selectedMembership, setSelectedMembership] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [tablaDatos, setTablaDatos] = useState("");
 
@@ -23,12 +24,23 @@ const Membresias = () => {
     maximumFractionDigits: 2,
   });
 
-  const openModal = (modalName) => {
-    setActiveModal(modalName);
+  const openModal = (modalName, membership = null) => {
+    setActiveModal(modalName), setSelectedMembership(membership);
   };
   const typeTable = (type) =>
     setTablaDatos((prev) => (prev === type ? "" : type));
 
+  const dataUpdate = (membresia) => {
+    setMembresias((prev) =>
+      prev.map((item) =>
+        item.id === membresia.id ? { ...item, ...membresia } : item
+      )
+    );
+  };
+
+  const dataDeleted = (id) => {
+    setMembresias((prev) => prev.filter((membresia) => membresia.id !== id));
+  };
   const closeModal = () => setActiveModal(null);
 
   useEffect(() => {
@@ -39,7 +51,7 @@ const Membresias = () => {
       } catch (error) {
         console.error("Error al obtener membresias", error);
         setMembresias([]);
-      } 
+      }
     };
     getMembresias();
   }, []);
@@ -59,7 +71,7 @@ const Membresias = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4 ">
-        <CardInforme typeTable={typeTable} />
+        <CardInforme typeTable={typeTable} membresias={membresias} />
       </div>
       {/* Tablas informes */}
       {tablaDatos === "" && (
@@ -67,6 +79,7 @@ const Membresias = () => {
           openModal={openModal}
           membresias={membresias}
           formatoPrecio={formatoPrecio}
+          dataDeleted={dataDeleted}
         />
       )}
       {tablaDatos !== "" && (
@@ -95,7 +108,10 @@ const Membresias = () => {
             </button>
           </div>
 
-          <FormUpdate />
+          <FormUpdate
+            selectedMembership={selectedMembership}
+            dataUpdate={dataUpdate}
+          />
         </Modal>
       )}
     </div>

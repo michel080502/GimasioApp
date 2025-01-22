@@ -5,78 +5,100 @@ import Alerta from "../Alerta";
 import Camera from "../ui/Camera";
 
 import { useState } from "react";
+import { resizeImage } from "../../utils/resizeImage";
+import clienteAxios from "../../config/axios";
+import PropTypes from "prop-types";
 
-const FormRegistro = () => {
+const FormRegistro = ({ dataReload }) => {
+  const [formData, setFormData] = useState({
+    nombre: "",
+    apellidoPaterno: "",
+    apellidoMaterno: "",
+    especialidad: "",
+    telefono: "",
+    email: "",
+  });
   const [file, setFile] = useState(null);
-
   const [alerta, setAlerta] = useState({ msg: "", error: false });
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [showOptions, setShowOptions] = useState(null);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (file == null) {
-      setAlerta({ msg: "Por favor selecciona imagen", error: true });
-      return;
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    // Aseguramos que solo se ingresen números
+    if (name === "telefono") {
+      // Solo permite números y se limita a 10 caracteres
+      const numericValue = value.replace(/[^0-9]/g, "").slice(0, 10);
+      setFormData({
+        ...formData,
+        [name]: numericValue,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
     }
-    setAlerta({ msg: "Ok", error: false });
+  };
+
+  const validarFormData = (data) => {
+    if (!data.nombre.trim()) return "El nombre es obligatorio";
+    if (!data.apellidoPaterno.trim())
+      return "El apellido paterno es obligatorio";
+    if (!data.apellidoMaterno.trim())
+      return "El apellido materno es obligatorio";
+    if (!data.especialidad.trim()) return "La especialidad es obligatorio";
+    if (!data.telefono.trim()) return "El telefono es obligatorio";
+    if (!data.email.trim()) return "El email es obligatorio";
+    if (!file) return "Selecciona imagen por favor";
+    return null;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errorMsg = validarFormData(formData);
+    if (errorMsg) return mostrarAlerta(errorMsg, true);
+    try {
+      const {
+        nombre,
+        apellidoPaterno,
+        apellidoMaterno,
+        especialidad,
+        telefono,
+        email,
+      } = formData;
+      const trainer = new FormData();
+      trainer.append("nombre", nombre);
+      trainer.append("apellidoPaterno", apellidoPaterno);
+      trainer.append("apellidoMaterno", apellidoMaterno);
+      trainer.append("especialidad", especialidad);
+      trainer.append("telefono", telefono);
+      trainer.append("email", email);
+      trainer.append("img", file);
+
+      const { data } = await clienteAxios.post("/entrenador/crear", trainer, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      dataReload();
+      mostrarAlerta(data.msg, false);
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
+    }
   };
   const { msg } = alerta;
   const toggleOptions = () => {
     setShowOptions((prev) => !prev);
-  };
-
-  const resizeImage = (file, size = 300) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target.result;
-      };
-
-      reader.readAsDataURL(file);
-
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        // Configura el tamaño del canvas
-        canvas.width = size;
-        canvas.height = size;
-
-        // Escala la imagen y centra
-        const scale = Math.max(size / img.width, size / img.height);
-        const x = (size - img.width * scale) / 2;
-        const y = (size - img.height * scale) / 2;
-
-        // Rellena el fondo (opcional)
-        ctx.fillStyle = "#FFF";
-        ctx.fillRect(0, 0, size, size);
-
-        // Dibuja la imagen redimensionada y centrada
-        ctx.drawImage(
-          img,
-          0,
-          0,
-          img.width,
-          img.height,
-          x,
-          y,
-          img.width * scale,
-          img.height * scale
-        );
-
-        // Convierte a blob para enviar al backend
-        canvas.toBlob(
-          (blob) => resolve(blob),
-          "image/jpeg",
-          0.8 // Calidad de compresión
-        );
-      };
-
-      img.onerror = (err) => reject(err);
-    });
   };
 
   const handleCapture = (imageData) => {
@@ -126,7 +148,7 @@ const FormRegistro = () => {
                 <MdAddPhotoAlternate className="w-full h-full text-gray-300 hover:text-gray-500" />
               )}
             </button>
-              <p className="text-center font-medium">Foto del entrenador</p>
+            <p className="text-center font-medium">Foto del entrenador</p>
             {/* Opcion para cargar imagen */}
             {showOptions && (
               <div className="absolute top-10 md:top-1/2 mt-2 bg-white border rounded-lg shadow-lg w-48 z-10">
@@ -179,6 +201,9 @@ const FormRegistro = () => {
               <input
                 className="border p-2 rounded-lg"
                 type="text"
+                name="nombre"
+                value={formData.nombre || ""}
+                onChange={handleInputChange}
                 placeholder="ejm: Carlos Belcast"
               />
             </div>
@@ -187,6 +212,9 @@ const FormRegistro = () => {
               <input
                 className="border p-2 rounded-lg"
                 type="text"
+                name="apellidoPaterno"
+                value={formData.apellidoPaterno || ""}
+                onChange={handleInputChange}
                 placeholder="Carlos Belcast"
               />
             </div>
@@ -195,6 +223,9 @@ const FormRegistro = () => {
               <input
                 className="border p-2 rounded-lg"
                 type="text"
+                name="apellidoMaterno"
+                value={formData.apellidoMaterno || ""}
+                onChange={handleInputChange}
                 placeholder="Carlos Belcast"
               />
             </div>
@@ -203,6 +234,9 @@ const FormRegistro = () => {
               <input
                 className="border p-2 rounded-lg"
                 type="text"
+                name="especialidad"
+                value={formData.especialidad || ""}
+                onChange={handleInputChange}
                 placeholder="ejm: Carlos Belcast"
               />
             </div>
@@ -210,7 +244,13 @@ const FormRegistro = () => {
               <label className=" p-1 font-bold">Telefono</label>
               <input
                 className="border p-2 rounded-lg"
-                type="text"
+                type="tel"
+                maxLength="10"
+                name="telefono"
+                pattern="[0-9]{10}" // Solo permite 10 dígitos numéricos
+                title="Debe ingresar solo números."
+                value={formData.telefono || ""}
+                onChange={handleInputChange}
                 placeholder="ejm: Carlos Belcast"
               />
             </div>
@@ -219,6 +259,9 @@ const FormRegistro = () => {
               <input
                 className="border p-2 rounded-lg"
                 type="email"
+                name="email"
+                value={formData.email || ""}
+                onChange={handleInputChange}
                 placeholder="ejm: Carlos Belcast"
               />
             </div>
@@ -228,6 +271,10 @@ const FormRegistro = () => {
       </form>
     </>
   );
+};
+
+FormRegistro.propTypes = {
+  dataReload: PropTypes.func,
 };
 
 export default FormRegistro;

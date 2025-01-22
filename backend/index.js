@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import morgan from "morgan"
+import morgan from "morgan";
 import cors from "cors";
 import { Server as SocketServer } from "socket.io";
 import http from "http"; // Importar el servidor HTTP
@@ -8,7 +8,8 @@ import pool from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import productRouter from "./routes/productRoutes.js";
-import memberShipRoute from "./routes/memberShipRoute.js"
+import memberShipRoute from "./routes/memberShipRoute.js";
+import trainerRoutes from "./routes/trainerRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -20,15 +21,14 @@ const io = new SocketServer(server, {
   },
 });
 
-io.on('connection', socket => {
-  console.log('Cliente conectado');
-  socket.on('message', (data) =>{
+io.on("connection", (socket) => {
+  console.log("Cliente conectado");
+  socket.on("message", (data) => {
     console.log(data);
-  })
-})
+  });
+});
 
-
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
 app.use(express.json());
 const whitelist = [process.env.FRONTEND_URL];
@@ -55,7 +55,8 @@ app.use((req, res, next) => {
 app.use("/api/admin", adminRoutes);
 app.use("/api/cliente", clientRoutes);
 app.use("/api/producto", productRouter);
-app.use("/api/membresia", memberShipRoute)
+app.use("/api/membresia", memberShipRoute);
+app.use("/api/entrenador", trainerRoutes);
 
 const PORT = process.env.PORT || 4000;
 

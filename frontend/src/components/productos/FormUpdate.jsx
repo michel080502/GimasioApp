@@ -2,11 +2,7 @@ import { useState, useEffect } from "react";
 import clienteAxios from "../../config/axios";
 import PropTypes from "prop-types";
 import Alerta from "../Alerta";
-const FormUpdate = ({
-  selectedProd,
-  categorias,
-  formatoPrecio,
-}) => {
+const FormUpdate = ({ selectedProd, categorias, formatoPrecio }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [producto, setProducto] = useState(selectedProd);
   const [alerta, setAlerta] = useState({ msg: "", error: false });
@@ -27,9 +23,7 @@ const FormUpdate = ({
       ...prev,
       [name]:
         name === "precio" || name === "descuento" || name === "stock"
-          ? value === ""
-            ? ""
-            : parseFloat(value) || 0
+          ? parseFloat(value) || 0
           : value,
     }));
   };
@@ -200,9 +194,10 @@ const FormUpdate = ({
                   className="border p-2 pl-8 rounded-lg w-full"
                   value={producto.precio || ""}
                   name="precio"
+                  type="number"
+                  min="0"
                   step="any"
                   onChange={handleChange}
-                  type="number"
                   placeholder="ejm: 300.00"
                 />
               </div>

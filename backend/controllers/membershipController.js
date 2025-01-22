@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 
 const obtenerTodas = async (req, res) => {
   try {
-    const querySelect = "SELECT * FROM membresias WHERE archived = false";
+    const querySelect = "SELECT * FROM membresias WHERE eliminado = false ORDER BY id DESC";
     const { rows: membresias } = await pool.query(querySelect);
     const membresiasConvertidas = membresias.map((membresia) => ({
       ...membresia,
@@ -29,33 +29,9 @@ const crear = async (req, res) => {
     //Filtra las membresias creadas anteriormente y valida si ya existe una con el nombre ingresado
     const filterquery = "SELECT * FROM membresias WHERE nombre = $1";
     const { rows: membresiaExiste } = await pool.query(filterquery, [nombre]);
-    if (membresiaExiste.length > 0 && membresiaExiste[0].archived === false) {
+    if (membresiaExiste.length > 0) {
       const error = new Error("Ya existe membresia con ese nombre");
       return res.status(409).json({ msg: error.message });
-    } else if (
-      membresiaExiste.length > 0 &&
-      membresiaExiste[0].archived === true
-    ) {
-      const queryUpdateActive = `
-        UPDATE membresias
-        SET
-          beneficios = $1,
-          duracion_dias = $2,
-          precio = $3,
-          archived = $4
-        WHERE id = $5
-        RETURNING *
-      `;
-      const { rows: membresiaReactive } = await pool.query(queryUpdateActive, [
-        beneficios,
-        duracion,
-        precio,
-        false,
-        membresiaExiste[0].id,
-      ]);
-      return res.status(200).json({
-        msg: `Membresia ${membresiaReactive[0].nombre} encontrada y reactivada con estos datos`,
-      });
     }
 
     //Inserta la membresia a la base de datos
@@ -95,23 +71,23 @@ const actualizar = async (req, res) => {
     const queryUpdate = `
     UPDATE membresias
     SET 
-      nombre = $1, 
-      beneficios = $2, 
-      duracion_dias = $3, 
-      precio = $4,
-      disponible = $5
+      nombre = COALESCE($1, nombre), 
+      beneficios = COALESCE($2, beneficios),
+      duracion_dias = COALESCE($3, duracion_dias), 
+      precio = COALESCE($4, precio),
+      disponible = COALESCE($5, disponible)
     WHERE id = $6
   `;
     //Actualiza el registroe en la base de datos
     await pool.query(queryUpdate, [
-      nombre !== undefined ? nombre : membresia[0].nombre,
-      beneficios !== undefined ? beneficios : membresia[0].beneficios,
-      duracion_dias !== undefined ? duracion_dias : membresia[0].duracion_dias,
-      precio !== undefined ? precio : membresia[0].precio,
-      disponible !== undefined ? disponible : membresia[0].disponible,
+      nombre,
+      beneficios,
+      +duracion_dias,
+      +precio,
+      disponible,
       id,
     ]);
-    res.json({ msg: "Datos de membresia modificados correctamente" });
+    res.json({ msg: "Dato modificado correctamente" });
   } catch (error) {
     console.log(error);
     res
@@ -140,7 +116,7 @@ const actualizarDisponible = async (req, res) => {
       disponible !== undefined ? disponible : membresia[0].disponible,
       id,
     ]);
-    res.json({ msg: "Dato de membresia modificado correctamente" });
+    res.json({ msg: "Estado de disponibilidad cambiado correctamente" });
   } catch (error) {
     console.log(error);
     res
@@ -161,7 +137,7 @@ const elimiarPorId = async (req, res) => {
       const error = new Error("Membresia no encontrada en la base de datos");
       return res.status(404).json({ msg: error.message });
     }
-    const logicalErese = `UPDATE membresias SET archived = $1 WHERE id = $2 `;
+    const logicalErese = `UPDATE membresias SET eliminado = $1 WHERE id = $2 `;
     await pool.query(logicalErese, [true, id]);
     return res.json({ msg: "Membresia eliminada correctamente" });
   } catch (error) {

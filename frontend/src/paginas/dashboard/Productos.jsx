@@ -58,10 +58,14 @@ const Productos = () => {
     setCategorias((prev) => prev.filter((categoria) => categoria.id !== id));
   };
 
-  const actualizarProductos = (id) => {
+  const dataDeletedProducto = (id) => {
     setProductos((prev) => prev.filter((categoria) => categoria.id !== id));
   };
 
+  const dataUpdatedProduct = (id) => {
+    setProductos((prev) => prev.filter((producto) => producto.id !== id));
+  };
+  
   const actualizarDisponibleProductos = (id, newValue) => {
     setProductos((prev) =>
       prev.map((producto) =>
@@ -114,7 +118,8 @@ const Productos = () => {
         dataType={dataType}
         formatoPrecio={formatoPrecio}
         actualizarDisponibleProductos={actualizarDisponibleProductos}
-        actualizarProductos={actualizarProductos}
+        dataDeletedProducto={dataDeletedProducto}
+      
       />
       {/* Modal de agregar productos */}
       {activeModal === "registrar" && (
@@ -142,6 +147,7 @@ const Productos = () => {
             selectedProd={selectedProd}
             categorias={categorias}
             formatoPrecio={formatoPrecio}
+            dataUpdatedProduct={dataUpdatedProduct}
           />
         </Modal>
       )}

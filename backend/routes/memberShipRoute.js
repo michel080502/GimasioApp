@@ -7,7 +7,7 @@ const router = express.Router();
 router.post("/crear",crear);
 router.get("/",obtenerTodas); 
 router.put("/actualizar/:id", actualizar);
-router.put("/actualizarDisponible/:id", actualizarDisponible);
+router.put("/actualizar-disponible/:id", actualizarDisponible);
 router.delete("/eliminar/:id", elimiarPorId);
 router.get("/total",obtnerNumeroMembresias);
 router.get("/porId/:id",obtenerMembresiaPorId);

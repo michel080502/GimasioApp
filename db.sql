@@ -27,7 +27,8 @@ CREATE TABLE clientes (
     matricula VARCHAR(50) NOT NULL UNIQUE,
     img_public_id VARCHAR(255),
     img_secure_url VARCHAR(255),
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    eliminado BOOLEAN DEFAULT FALSE
 );
 
 -- Tabla de visitas
@@ -47,7 +48,7 @@ CREATE TABLE visitas_compras (
 CREATE TABLE categorias_productos (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(20) NOT NULL,
-    archived BOOLEAN DEFAULT false,
+    eliminado BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE productos (
@@ -62,7 +63,7 @@ CREATE TABLE productos (
     img_public_id VARCHAR(255),
     img_secure_url VARCHAR(255),
     disponible BOOLEAN DEFAULT TRUE,
-    archived BOOLEAN DEFAULT FALSE,
+    eliminado BOOLEAN DEFAULT FALSE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_categoria FOREIGN KEY (categoria_id) 
     REFERENCES categorias_productos (id) ON DELETE SET DEFAULT
@@ -76,7 +77,7 @@ CREATE TABLE membresias (
     duracion_dias INT NOT NULL,
     precio NUMERIC(10, 2) NOT NULL,
     disponible BOOLEAN DEFAULT TRUE,
-    archived BOOLEAN DEFAULT FALSE
+    eliminado BOOLEAN DEFAULT FALSE
 );
 
 -- Tabla de compras de membresías
@@ -123,8 +124,8 @@ CREATE TABLE detalles_ventas (
 CREATE TABLE entrenadores (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
-    apellidoPaterno VARCHAR(255) NOT NULL,
-    apellidoMaterno VARCHAR(255) NOT NULL,
+    apellido_paterno VARCHAR(255) NOT NULL,
+    apellido_materno VARCHAR(255) NOT NULL,
     especialidad VARCHAR(255) NOT NULL,
     telefono VARCHAR(15),
     email VARCHAR(255) UNIQUE,
@@ -210,7 +211,7 @@ LEFT JOIN
 ON 
     p.categoria_id = c.id
 WHERE 
-    p.archived = FALSE; 
+    p.eliminado = FALSE; 
 
 
 -- Vista para consultar la ultima membresia adquirida por el usuario

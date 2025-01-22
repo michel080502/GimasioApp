@@ -21,7 +21,7 @@ const crear = async (req, res, next) => {
       });
     }
     const filterquery =
-      "SELECT * FROM productos WHERE nombre = $1 AND archived = $2";
+      "SELECT * FROM productos WHERE nombre = $1 AND eliminado = $2";
     const { rows: productoExiste } = await pool.query(filterquery, [
       nombre,
       false,
@@ -141,17 +141,17 @@ const crearCategoria = async (req, res) => {
     // Verificar si la categoría ya existe
     const queryFind = `SELECT * FROM categorias_productos WHERE nombre = $1`;
     const { rows: categoriaExiste } = await pool.query(queryFind, [nombre]);
-    if (categoriaExiste.length > 0 && categoriaExiste[0].archived === false) {
+    if (categoriaExiste.length > 0 && categoriaExiste[0].eliminado === false) {
       const error = new Error(
         "La categoría ya se encuentra registrada en la base de datos."
       );
       return res.status(409).json({
         msg: error.message,
       });
-    } else if (categoriaExiste.length > 0 && categoriaExiste[0].archived === false) {
+    } else if (categoriaExiste.length > 0 && categoriaExiste[0].eliminado === false) {
       const queryUpdateActive = `UPDATE categorias_productos 
       SET 
-      archived = $1
+      eliminado = $1
       WHERE id = $2
       RETURNING *`;
       const { rows: categoriaReactive } = await pool.query(queryUpdateActive, [
@@ -171,7 +171,7 @@ const crearCategoria = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al registrar la categoría" });
+    res.status(500).json({ msg: "Error al registrar la categoría" });
   }
 };
 
@@ -184,7 +184,7 @@ const deleteProducto = async (req, res) => {
       const error = new Error("Producto no encontrado");
       return res.status(404).json({ msg: error.message });
     }
-    const logicalErase = `UPDATE productos SET archived = $1 WHERE id = $2`;
+    const logicalErase = `UPDATE productos SET eliminado = $1 WHERE id = $2`;
     await pool.query(logicalErase, [true, id]);
     await deleteImage(producto[0].img_public_id);
     res.json({ msg: "Producto eliminado" });
@@ -203,7 +203,7 @@ const deleteCategoria = async (req, res) => {
       const error = new Error("Categoria no encontrada");
       return res.status(404).json({ msg: error.message });
     }
-    const logicalErase = `UPDATE categorias_productos SET archived = $1 WHERE id = $2`;
+    const logicalErase = `UPDATE categorias_productos SET eliminado = $1 WHERE id = $2`;
     await pool.query(logicalErase, [true, id]);
 
     res.json({ msg: "Categoria eliminada" });
@@ -216,7 +216,7 @@ const deleteCategoria = async (req, res) => {
 const allCategoria = async (req, res) => {
   try {
     const querySelect =
-      "SELECT * FROM categorias_productos WHERE archived = false";
+      "SELECT * FROM categorias_productos WHERE eliminado = false";
     const { rows: categorias } = await pool.query(querySelect);
     return res.status(200).json(categorias);
   } catch (error) {

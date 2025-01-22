@@ -39,7 +39,7 @@ const ConfirmarCuenta = () => {
         <img className=" my-6 w-80 " src="/assets/login.png" alt="logo-inicio" />
           
       </div>
-      <div className="shadow-md w-3/4 shadow-slate-600 p-3 mx-20 rounded-2xl  flex flex-col justify-center items-center gap-2">
+      <div className="relative shadow-md w-3/4 shadow-slate-600 p-3 mx-20 rounded-2xl  flex flex-col justify-center items-center gap-2">
           <h1 className="text-5xl m-2 font-bold">Confirmar cuenta y administra tu gimnasio</h1>
 
           {!cargando && 

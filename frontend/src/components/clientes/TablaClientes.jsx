@@ -1,5 +1,4 @@
 import { useState } from "react";
-import useSocket from "../../hooks/useSocket"; // Importa el hook
 import clienteAxios from "../../config/axios";
 import PropTypes from "prop-types";
 
@@ -12,13 +11,21 @@ import { FaUserEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import ConfirmDialogDelete from "../ui/confirmDialogDelete";
 import MenuExport from "../ui/MenuExport";
+import Alerta from "../Alerta";
 import { exportDataToExcel } from "../../utils/exportDataToExcel";
 
-const TablaClientes = ({ clientes, setClientes, openModal }) => {
+const TablaClientes = ({ clientes, openModal, dataDeleted }) => {
   const [deleteCliente, setDeleteCliente] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [optionsExport, setOptionsExport] = useState(null);
+  const [alerta, setAlerta] = useState({ msg: "", error: false });
 
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
   // Combinar filtros de búsqueda y estado
   const filteredClientes = clientes.filter((cliente) => {
     // Filtro de búsqueda
@@ -55,28 +62,28 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
   };
 
   const handleDownload = async () => {
-    exportDataToExcel(generateExcelData(filteredClientes), headers, "reportes_clientes", "download")
+    exportDataToExcel(
+      generateExcelData(filteredClientes),
+      headers,
+      "reportes_clientes",
+      "download"
+    );
   };
 
   const handleSendReport = async () => {
-    exportDataToExcel(generateExcelData(filteredClientes), headers, "reportes_clientes", "send")
+    exportDataToExcel(
+      generateExcelData(filteredClientes),
+      headers,
+      "reportes_clientes",
+      "send"
+    );
   };
 
-  const handleNewClient = (nuevoCliente) => {
-    setClientes((prevClientes) => {
-      // Solo agregar si no está ya en la lista
-      if (!prevClientes.some((cliente) => cliente.id === nuevoCliente.id)) {
-        // Añadir la propiedad "animating" al nuevo cliente
-        return [{ ...nuevoCliente, animating: true }, ...prevClientes];
-      }
-      return prevClientes;
-    });
-  };
 
   // Escuchar el evento "nuevo-cliente" mediante el hook
-  useSocket({
-    "nuevo-cliente": handleNewClient, // Agregar el nuevo cliente a la lista
-  });
+  // useSocket({
+  //   "nuevo-cliente": handleNewClient, // Agregar el nuevo cliente a la lista
+  // });
 
   const toggleDelete = (id) => {
     setDeleteCliente(deleteCliente === id ? null : id);
@@ -85,12 +92,14 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
   const handleDelete = async (id) => {
     try {
       const { data } = await clienteAxios.delete(`/cliente/delete/${id}`);
-      console.log(data.msg);
-      setClientes(clientes.filter((cliente) => cliente.id !== id)); // Actualiza la lista
+      dataDeleted(id);
+      mostrarAlerta(data.msg, false);
     } catch (error) {
-      console.log("Error al eliminar cliente:", error);
+      mostrarAlerta(error.response.data.msg, true)
     }
   };
+
+  const { msg } = alerta;
 
   return (
     <div className="my-4 p-3 bg-white rounded-lg">
@@ -140,7 +149,8 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
           )}
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className=" relative grid overflow-x-auto">
+        {msg && <Alerta alerta={alerta} />}
         <table className="min-w-full border border-gray-200 divide-y divide-gray-300 ">
           <thead className="bg-gray-100 text-sm ">
             <tr className="text-center">
@@ -168,17 +178,8 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
               filteredClientes.map((cliente, index) => (
                 <tr
                   key={cliente.id}
-                  className={`hover:bg-gray-100 ${
-                    cliente.animating ? "bg-green-300 animate-fadeIn" : ""
-                  }`}
-                  onAnimationEnd={() => {
-                    // Después de que termine la animación, quitamos la propiedad animating
-                    setClientes((prevClientes) =>
-                      prevClientes.map((cl) =>
-                        cl.id === cliente.id ? { ...cl, animating: false } : cl
-                      )
-                    );
-                  }}
+                  className={"hover:bg-gray-100 "}
+
                 >
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
                     {index + 1}
@@ -200,11 +201,11 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
                     {cliente.telefono}
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
-                  {format(
-                        new Date(cliente.nacimiento),
-                        "dd 'de' MMMM, yyyy",
-                        { locale: es }
-                      )}
+                    {format(
+                      new Date(cliente.nacimiento),
+                      "dd 'de' MMMM, yyyy",
+                      { locale: es }
+                    )}
                   </td>
 
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
@@ -218,7 +219,7 @@ const TablaClientes = ({ clientes, setClientes, openModal }) => {
                       <button
                         className=" text-yellow-400 hover:text-yellow-600 transition-colors duration-300"
                         onClick={() => {
-                          openModal("editar", cliente.id);
+                          openModal("editar", cliente);
                         }}
                       >
                         <FaUserEdit className="text-3xl" />
@@ -255,6 +256,7 @@ TablaClientes.propTypes = {
   clientes: PropTypes.array,
   setClientes: PropTypes.func,
   filterType: PropTypes.string,
+  dataDeleted: PropTypes.func,
 };
 
 export default TablaClientes;
