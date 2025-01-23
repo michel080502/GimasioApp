@@ -41,5 +41,5 @@ const comprarMembresia = async (req, res) => {
     res.status(500).json({ msg: "Hubo un error en el servidor" });
   }
 };
-
+ 
 export { comprarMembresia };

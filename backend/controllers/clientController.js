@@ -118,11 +118,11 @@ const getAll = async (req, res) => {
   try {
     const selectQuery = "SELECT * FROM clientes ORDER BY id DESC;";
     const { rows: clientes } = await pool.query(selectQuery);
-	// Convertir la fecha de nacimiento a solo fecha en formato YYYY-MM-DD
-    const clientesFormateados = clientes.map(cliente => ({
-		...cliente,
-		nacimiento: cliente.nacimiento.toISOString().split('T')[0], 
-	  }));
+    // Convertir la fecha de nacimiento a solo fecha en formato YYYY-MM-DD
+    const clientesFormateados = clientes.map((cliente) => ({
+      ...cliente,
+      nacimiento: cliente.nacimiento.toISOString().split("T")[0],
+    }));
     res.json(clientesFormateados);
   } catch (error) {
     console.log(error);
@@ -132,17 +132,20 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   const { id } = req.params;
-  const query = "SELECT * FROM clientes WHERE id = $1"
+  const query = "SELECT * FROM clientes WHERE id = $1";
+  if (!id || isNaN(id) || parseInt(id) <= 0) {
+    return res.status(400).json({ error: "El id proporcionado no es válido." });
+  }
   try {
     const { rows } = await pool.query(query, [id]);
     if (rows.length === 0) {
       const error = new Error("Cliente no encontrado");
       return res.status(400).json({ msg: error.message });
     }
-	const clienteFormateado = {
-		...rows[0],
-      nacimiento: rows[0].nacimiento.toISOString().split('T')[0], 
-	};
+    const clienteFormateado = {
+      ...rows[0],
+      nacimiento: rows[0].nacimiento.toISOString().split("T")[0],
+    };
 
     return res.json(clienteFormateado);
   } catch (error) {
@@ -156,17 +159,28 @@ const deleteById = async (req, res) => {
   const deleteQuery = "DELETE FROM clientes WHERE id = $1 RETURNING *";
 
   try {
-    const {rows: deletedClient } = await pool.query(deleteQuery, [id]);
+    const { rows: deletedClient } = await pool.query(deleteQuery, [id]);
     if (deletedClient.length === 0) {
       const error = new Error("Cliente no encontrado");
       return res.status(400).json({ msg: error.message });
     }
     await deleteImage(deletedClient[0].img_public_id);
-    return res.json({ msg: "Cliente eliminado correctamente"});
+    return res.json({ msg: "Cliente eliminado correctamente" });
   } catch (error) {
     console.log(error);
-	res.status(500).json({ msg: "Hubo un error en el servidor" });
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
   }
 };
 
-export { crear, update, getAll, getById, deleteById };
+const obtenerClientesNoActivos = async (req, res) => {
+  try {
+    const query = "SELECT * FROM vista_clientes_sin_membresia";
+    const { rows: clientes } = await pool.query(query);
+    res.json(clientes);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+};
+
+export { crear, update, getAll, getById, deleteById, obtenerClientesNoActivos };

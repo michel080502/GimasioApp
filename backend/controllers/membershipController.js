@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 
 const obtenerTodas = async (req, res) => {
   try {
-    const querySelect = "SELECT * FROM membresias WHERE archived = false";
+    const querySelect = "SELECT * FROM membresias WHERE eliminado = false";
     const { rows: membresias } = await pool.query(querySelect);
     const membresiasConvertidas = membresias.map((membresia) => ({
       ...membresia,
@@ -25,39 +25,13 @@ const crear = async (req, res) => {
         .status(400)
         .json({ msg: "Todos los campos son obligatorios." });
     }
-
     //Filtra las membresias creadas anteriormente y valida si ya existe una con el nombre ingresado
-    const filterquery = "SELECT * FROM membresias WHERE nombre = $1";
+    const filterquery = "SELECT * FROM membresias WHERE nombre = $1 AND eliminado = false";
     const { rows: membresiaExiste } = await pool.query(filterquery, [nombre]);
-    if (membresiaExiste.length > 0 && membresiaExiste[0].archived === false) {
-      const error = new Error("Ya existe membresia con ese nombre");
+    if (membresiaExiste.length > 0) {
+      const error = new Error("Ya existe una membresia con ese nombre");
       return res.status(409).json({ msg: error.message });
-    } else if (
-      membresiaExiste.length > 0 &&
-      membresiaExiste[0].archived === true
-    ) {
-      const queryUpdateActive = `
-        UPDATE membresias
-        SET
-          beneficios = $1,
-          duracion_dias = $2,
-          precio = $3,
-          archived = $4
-        WHERE id = $5
-        RETURNING *
-      `;
-      const { rows: membresiaReactive } = await pool.query(queryUpdateActive, [
-        beneficios,
-        duracion,
-        precio,
-        false,
-        membresiaExiste[0].id,
-      ]);
-      return res.status(200).json({
-        msg: `Membresia ${membresiaReactive[0].nombre} encontrada y reactivada con estos datos`,
-      });
-    }
-
+    } 
     //Inserta la membresia a la base de datos
     const insertQuery = `
         INSERT INTO membresias (nombre, beneficios, duracion_dias, precio)
@@ -69,11 +43,12 @@ const crear = async (req, res) => {
       duracion,
       precio,
     ]);
+    
     // Emitir el nueva Membresia usando Socket.IO
     // req.io.emit("nueva-Membresia", nuevaMembresia[0]);
 
     res.status(201).json({
-      msg: `Membresia ${nuevaMembresia[0].nombre} creada exitosamente`,
+      msg: `Membresia ${nombre} creada exitosamente`,
     });
   } catch (error) {
     console.error(error);
@@ -161,7 +136,7 @@ const elimiarPorId = async (req, res) => {
       const error = new Error("Membresia no encontrada en la base de datos");
       return res.status(404).json({ msg: error.message });
     }
-    const logicalErese = `UPDATE membresias SET archived = $1 WHERE id = $2 `;
+    const logicalErese = `UPDATE membresias SET eliminado = $1 WHERE id = $2 `;
     await pool.query(logicalErese, [true, id]);
     return res.json({ msg: "Membresia eliminada correctamente" });
   } catch (error) {

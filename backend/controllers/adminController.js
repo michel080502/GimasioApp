@@ -6,7 +6,14 @@ import emailRegistro from "../helpers/emailRegistro.js";
 import emailOlvidePassword from "../helpers/emailOlvidePassword.js";
 
 const registrar = async (req, res) => {
-  const { nombre, apellidoPaterno, apellidoMaterno, email, telefono, password } = req.body;
+  const {
+    nombre,
+    apellidoPaterno,
+    apellidoMaterno,
+    email,
+    telefono,
+    password,
+  } = req.body;
 
   //Prevenir duplicado de email
   const query = "SELECT * FROM admins WHERE email = $1";
@@ -218,6 +225,62 @@ const nuevoPassword = async (req, res) => {
   }
 };
 
+const actualizar = async (req, res) => {
+  const { id } = req.params;
+  const { nombre, apellidoPaterno, apellidoMaterno, email, telefono } =
+    req.body;
+  if (!id || isNaN(id) || parseInt(id) <= 0) {
+    const error = new Error("El id proporcionado no es válido.");
+    return res.status(400).json({ msg: error.message });
+  }
+
+  if (!nombre || !apellidoPaterno || !apellidoMaterno || !email || !telefono) {
+    const error = new Error("No se proporcionaron todos los campos para actualizar.");
+    return res.status(400).json({ msg: error.message });
+  }
+
+  const query = "SELECT * FROM admins WHERE id = $1";
+  try {
+    const { rows: admin } = await pool.query(query, [id]);
+    if (admin.length === 0) {
+      const error = new Error("Usuario no encontrado");
+      return res.status(404).json({ msg: error.message });
+    }
+
+    const updateQuery = `
+      UPDATE admins
+      SET 
+        nombre = $1,
+        apellido_paterno = $2,
+        apellido_materno = $3,
+        email = $4,
+        telefono = $5
+      WHERE id = $6
+    `;
+
+    const { rows: updatedAdmin } = await pool.query(updateQuery, [
+      nombre !== undefined ? nombre : admin[0].nombre,
+      apellidoPaterno !== undefined
+        ? apellidoPaterno
+        : admin[0].apellido_paterno,
+      apellidoMaterno !== undefined
+        ? apellidoMaterno
+        : admin[0].apellido_materno,
+      email !== undefined ? email : admin[0].email,
+      telefono !== undefined ? telefono : admin[0].telefono,
+      id,
+    ]);
+
+    res.json({
+      msg: "Usuario actualizado exitosamente.",
+      admin: updatedAdmin[0],
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Error al actualizar el usuario." });
+  }
+};
+
 export {
   registrar,
   perfil,
@@ -226,4 +289,5 @@ export {
   olvidePassword,
   comprobarToken,
   nuevoPassword,
+  actualizar
 };

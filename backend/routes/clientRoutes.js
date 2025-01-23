@@ -6,10 +6,12 @@ import {
   getAll,
   getById,
   update,
+  obtenerClientesNoActivos
 } from "../controllers/clientController.js";
 
 const router = express.Router();
 router.get("/", getAll);
+router.get("/no-activos", obtenerClientesNoActivos);
 router.get("/:id", getById);
 router.post(
   "/crear",
