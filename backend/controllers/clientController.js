@@ -1,6 +1,5 @@
 import pool from "../config/db.js";
 import { uploadImage, deleteImage } from "../helpers/cloudinary.js";
-// fs es un modulo que extiende las capacidades de FileSystem a recibir promesas
 import fs from "fs-extra";
 
 const crear = async (req, res, next) => {
