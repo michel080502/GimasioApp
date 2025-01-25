@@ -170,4 +170,16 @@ const deleteById = async (req, res) => {
   }
 };
 
-export { crear, update, getAll, getById, deleteById };
+const obtenerClientesNoActivos = async (req, res) => {
+  try {
+    const query = "SELECT * FROM vista_clientes_sin_membresia";
+    const { rows: clientes } = await pool.query(query);
+    res.json(clientes);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+};
+
+
+export { crear, update, getAll, getById, deleteById, obtenerClientesNoActivos };

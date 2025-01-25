@@ -14,7 +14,7 @@ const checkAut = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       // buscamos el ususario con el id y creamos una sesion con ese usuario
       const query =
-        "SELECT id, nombre, apellido_paterno, apellido_materno, email FROM admins WHERE id = $1";
+        "SELECT id, nombre, apellido_paterno, apellido_materno, email, telefono, fecha_creacion FROM admins WHERE id = $1";
       const { rows: admin } = await pool.query(query, [decoded.id]);
 
       // Verificar si se encontró al administrador

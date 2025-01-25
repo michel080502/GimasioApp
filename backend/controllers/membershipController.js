@@ -2,7 +2,8 @@ import pool from "../config/db.js";
 
 const obtenerTodas = async (req, res) => {
   try {
-    const querySelect = "SELECT * FROM membresias WHERE eliminado = false ORDER BY id DESC";
+    const querySelect =
+      "SELECT * FROM membresias WHERE eliminado = false ORDER BY id DESC";
     const { rows: membresias } = await pool.query(querySelect);
     const membresiasConvertidas = membresias.map((membresia) => ({
       ...membresia,

@@ -6,7 +6,14 @@ import emailRegistro from "../helpers/emailRegistro.js";
 import emailOlvidePassword from "../helpers/emailOlvidePassword.js";
 
 const registrar = async (req, res) => {
-  const { nombre, apellidoPaterno, apellidoMaterno, email, telefono, password } = req.body;
+  const {
+    nombre,
+    apellidoPaterno,
+    apellidoMaterno,
+    email,
+    telefono,
+    password,
+  } = req.body;
 
   //Prevenir duplicado de email
   const query = "SELECT * FROM admins WHERE email = $1";
@@ -62,6 +69,8 @@ const perfil = (req, res) => {
     apellidoPaterno: admin.apellido_paterno,
     apellidoMaterno: admin.apellido_materno,
     email: admin.email,
+    telefono: admin.telefono,
+    fecha_creacion: admin.fecha_creacion,
   });
 };
 
@@ -122,11 +131,13 @@ const autenticar = async (req, res) => {
     const token = generarJWT(usuario.id);
 
     res.json({
-      id: usuario.id, // Usamos 'id' porque en PostgreSQL es el nombre del campo
+      id: usuario.id,
       nombre: usuario.nombre,
       apellidoPaterno: usuario.apellido_paterno,
       apellidoMaterno: usuario.apellido_materno,
       email: usuario.email,
+      telefono: usuario.telefono,
+      fecha_creacion: usuario.fecha_creacion,
       token,
     });
   } catch (error) {
@@ -218,6 +229,62 @@ const nuevoPassword = async (req, res) => {
   }
 };
 
+const actualizar = async (req, res) => {
+  const { id } = req.params;
+  const { nombre, apellidoPaterno, apellidoMaterno, email, telefono } =
+    req.body;
+  if (!id || isNaN(id) || parseInt(id) <= 0) {
+    const error = new Error("El id proporcionado no es válido.");
+    return res.status(400).json({ msg: error.message });
+  }
+
+  if (!nombre || !apellidoPaterno || !apellidoMaterno || !email || !telefono) {
+    const error = new Error(
+      "No se proporcionaron todos los campos para actualizar."
+    );
+    return res.status(400).json({ msg: error.message });
+  }
+
+  const query = "SELECT * FROM admins WHERE id = $1";
+  try {
+    const { rows: admin } = await pool.query(query, [id]);
+    if (admin.length === 0) {
+      const error = new Error("Usuario no encontrado");
+      return res.status(404).json({ msg: error.message });
+    }
+
+    const updateQuery = `
+      UPDATE admins
+      SET 
+        nombre = COALESCE($1, nombre),
+        apellido_paterno = COALESCE($2, apellido_paterno),
+        apellido_materno = COALESCE($3, apellido_materno),
+        email = COALESCE($4, email),
+        telefono = COALESCE($5, telefono)
+      WHERE id = $6
+    `;
+
+    const values = [
+      nombre,
+      apellidoPaterno,
+      apellidoMaterno,
+      email,
+      telefono,
+      id,
+    ];
+
+    const { rows: updatedAdmin } = await pool.query(updateQuery, values);
+
+    res.json({
+      msg: "Usuario actualizado exitosamente.",
+      admin: updatedAdmin[0],
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Error al actualizar el usuario." });
+  }
+};
+
 export {
   registrar,
   perfil,
@@ -226,4 +293,5 @@ export {
   olvidePassword,
   comprobarToken,
   nuevoPassword,
+  actualizar,
 };

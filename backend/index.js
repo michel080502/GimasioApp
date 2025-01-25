@@ -10,6 +10,7 @@ import clientRoutes from "./routes/clientRoutes.js";
 import productRouter from "./routes/productRoutes.js";
 import memberShipRoute from "./routes/memberShipRoute.js";
 import trainerRoutes from "./routes/trainerRoutes.js";
+import shoppingRouter from "./routes/shoppingRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -56,6 +57,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/cliente", clientRoutes);
 app.use("/api/producto", productRouter);
 app.use("/api/membresia", memberShipRoute);
+app.use("/api/compra", shoppingRouter);
 app.use("/api/entrenador", trainerRoutes);
 
 const PORT = process.env.PORT || 4000;
