@@ -1,14 +1,19 @@
 import { IoMdCloseCircle } from "react-icons/io";
 
 import { useState, useEffect } from "react";
-import Costumers from "../membership/Costumers";
+import Costumers from "./Costumers";
 import Products from "./Products";
+import clienteAxios from "../../../config/axios";
 
 const PointSellProducts = () => {
   const [externalName, setExternalName] = useState("");
+  const [clientes, setClientes] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [productsSelect, setProductsSelect] = useState([]);
   const [saleMade, setSaleMade] = useState(null);
+  const [infoSale, setInfoSale] = useState(null);
   const [totalVenta, setTotalVenta] = useState(0); // Variable para el total de la venta
   // Calcular el total de la venta cada vez que productsSelect cambia
   useEffect(() => {
@@ -18,6 +23,30 @@ const PointSellProducts = () => {
     );
     setTotalVenta(nuevoTotalVenta);
   }, [productsSelect]); // calcula las ventas cada que el estado del productoSelect cambia
+
+  useEffect(() => {
+    const getClients = async () => {
+      try {
+        const { data } = await clienteAxios.get(`/cliente/`);
+        setClientes(data);
+      } catch (error) {
+        console.log(error);
+        setClientes([]);
+      }
+    };
+    const getProducts = async () => {
+      try {
+        const { data } = await clienteAxios.get(`/producto/`);
+        setProductos(data);
+      } catch (error) {
+        console.log(error);
+        setProductos([]);
+      }
+    };
+    getClients();
+    getProducts();
+    setLoading(false);
+  }, []);
 
   const seleccionarCliente = (cliente) => {
     setClienteSeleccionado(cliente);
@@ -77,18 +106,32 @@ const PointSellProducts = () => {
   //   setProductsSelect((prev) => prev.filter((p) => p.id !== id));
   // };
 
-  const handleSale = () => {
+  const handleSale = async () => {
+    const productosInfo = productsSelect.map((product) => ({
+      id: product.id,
+      cantidad: product.cantidad,
+      precioUnitario: product.total,
+      subtotal: product.subtotal,
+    }));
     if (productsSelect.length > 0 && clienteSeleccionado) {
       console.log("Venta realizada con los siguientes datos:");
       console.log("Cliente:", clienteSeleccionado);
-      console.log("Productos:", productsSelect);
+      console.log("Productos:", productosInfo);
       console.log("Total", totalVenta);
       setSaleMade(1);
       // setProductsSelect([]); // Limpiar productos seleccionados
       // setClienteSeleccionado(null); // Limpiar cliente seleccionado
-    } else {
-      console.error("Debe seleccionar al menos un cliente y productos.");
     }
+    // return;
+    // try {
+    //   const { data } = clienteAxios.post("/compra/producto/", {
+    //     cliente: clienteSeleccionado,
+    //     productos: productosInfo,
+    //   });
+    //   console.log(data);
+    // } catch (error) {
+    //   console.log(error);
+    // }
   };
   const activarVenta = clienteSeleccionado && productsSelect.length > 0;
 
@@ -99,114 +142,11 @@ const PointSellProducts = () => {
     maximumFractionDigits: 2,
   });
 
-  const clientes = [
-    {
-      id: 1,
-      nombre: "Javier Fernandez Lopez",
-      telefono: "1234567890",
-      email: "javier.fernandez@example.com",
-    },
-    {
-      id: 2,
-      nombre: "Maria Gonzalez Perez",
-      telefono: "0987654321",
-      email: "maria.gonzalez@example.com",
-    },
-    {
-      id: 3,
-      nombre: "Carlos Martinez Ruiz",
-      telefono: "1122334455",
-      email: "carlos.martinez@example.com",
-    },
-    {
-      id: 4,
-      nombre: "Ana Lopez Garcia",
-      telefono: "6677889900",
-      email: "ana.lopez@example.com",
-    },
-    {
-      id: 5,
-      nombre: "Luis Ramirez Soto",
-      telefono: "5544332211",
-      email: "luis.ramirez@example.com",
-    },
-  ];
-  const productos = [
-    {
-      id: 1,
-      nombre: "Proteína Whey Chocolate",
-      marca: "Optimum Nutrition",
-      categoria: "Accesorios",
-      stock: 50,
-      precio: 850.0,
-      descuento: 10.0,
-      total: 765.0,
-      img_public_id: "/assets/proteina.jpg",
-      img_secure_url: "/assets/proteina.jpg",
-      disponible: true,
-      fecha_creacion: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      nombre: "BCCAs",
-      marca: "Dymatize",
-      categoria: "Aminoacidos",
-      stock: 30,
-      precio: 950.0,
-      descuento: 5.0,
-      total: 902.5,
-      img_public_id: "/assets/proteina.jpg",
-      img_secure_url: "/assets/proteina.jpg",
-      disponible: true,
-      fecha_creacion: new Date().toISOString(),
-    },
-    {
-      id: 3,
-      nombre: "Aislado de Proteína Neutra",
-      marca: "BodyTech",
-      categoria: "Proteina",
-      stock: 20,
-      precio: 1200.0,
-      descuento: 15.0,
-      total: 1020.0,
-      img_public_id: "/assets/proteina.jpg",
-      img_secure_url: "/assets/proteina.jpg",
-      disponible: true,
-      fecha_creacion: new Date().toISOString(),
-    },
-    {
-      id: 4,
-      nombre: "Proteína Vegana Chocolate",
-      marca: "Vega",
-      categoria: "Proteina",
-      stock: 25,
-      precio: 750.0,
-      descuento: 0.0,
-      total: 750.0,
-      img_public_id: "/assets/proteina.jpg",
-      img_secure_url: "/assets/proteina.jpg",
-      disponible: true,
-      fecha_creacion: new Date().toISOString(),
-    },
-    {
-      id: 5,
-      nombre: "Proteína Caseína Nocturna",
-      marca: "MuscleTech",
-      categoria: "Proteina",
-      stock: 10,
-      precio: 1400.0,
-      descuento: 20.0,
-      total: 1120.0,
-      img_public_id: "/assets/proteina.jpg",
-      img_secure_url: "/assets/proteina.jpg",
-      disponible: true,
-      fecha_creacion: new Date().toISOString(),
-    },
-  ];
+  if (loading) return "cargando...";
   if (!saleMade) {
     return (
       <div className="grid grid-cols-8 divide-x-2">
-        <main className="col-span-5 pr-3">
+        <main className="col-span-5  pr-3">
           {!clienteSeleccionado ? (
             <Costumers
               clientes={clientes}
@@ -220,7 +160,7 @@ const PointSellProducts = () => {
             />
           )}
         </main>
-        <aside className="col-span-3 pl-3 grid gap-3">
+        <aside className="col-span-3 pl-3 grid gap-1">
           <h2>Resumen de la venta</h2>
           <div className="grid gap-1">
             <div className="flex items-center">
@@ -254,9 +194,6 @@ const PointSellProducts = () => {
                   formulario o ve a registrarlo al apartado de clientes
                 </p>
                 <form onSubmit={handleExternalClient} className="grid gap-2">
-                  <label className="text-sm text-gray-700">
-                    Nombre del cliente externo:
-                  </label>
                   <input
                     type="text"
                     id="name"

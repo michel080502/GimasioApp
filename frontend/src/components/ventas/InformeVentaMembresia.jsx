@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale"; // Importamos el idioma español
 
-const InformeVentaMembresia = ({ closeModal }) => {
+const InformeVentaMembresia = ({ closeModal, purchaseSelected }) => {
   const formatoPrecio = new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
@@ -29,15 +29,15 @@ const InformeVentaMembresia = ({ closeModal }) => {
             <h3 className="font-bold text-lg ">Cliente</h3>
             <div className="col-span-2 p-1 text-base">
               <p>Nombre completo:</p>
-              <p className=" font-normal">Junior H Corrido Tumbado</p>
+              <p className=" font-normal">{`${purchaseSelected.cliente_nombre} ${purchaseSelected.cliente_apellido_paterno} ${purchaseSelected.cliente_apellido_materno}`}</p>
             </div>
             <div className="p-1 text-base">
               <p>Número telefono</p>
-              <p className="font-normal">2221234566</p>
+              <p className="font-normal">{purchaseSelected.cliente_telefono}</p>
             </div>
             <div className="p-1 text-base">
               <p>Correo:</p>
-              <p className="font-normal">correo@correo.com</p>
+              <p className="font-normal">{purchaseSelected.cliente_email}</p>
             </div>
           </div>
           <div className="border grid gap-2 divide-y divide-black grid-cols-2 text-left p-3 ">
@@ -47,7 +47,7 @@ const InformeVentaMembresia = ({ closeModal }) => {
               <p className=" font-normal">
                 {" "}
                 {format(
-                  new Date("2023-10-15T14:30:00Z"),
+                  new Date(purchaseSelected.fecha_compra),
                   "dd 'de' MMMM, yyyy",
                   { locale: es }
                 )}
@@ -56,7 +56,7 @@ const InformeVentaMembresia = ({ closeModal }) => {
             <div className="col-span-2 flex justify-between p-1 text-base">
               <p>Hora de compra:</p>
               <p className="font-normal">
-                {format(new Date("2023-10-15T14:30:00Z"), "hh:mm a", {
+                {format(new Date(purchaseSelected.fecha_compra), "hh:mm a", {
                   locale: es,
                 })}
               </p>
@@ -64,28 +64,35 @@ const InformeVentaMembresia = ({ closeModal }) => {
             <div className="p-1 col-span-2 text-base">
               <div className="flex justify-between p-1">
                 <p>Tipo de membresia:</p>
-                <p className="font-normal">Basica</p>
+                <p className="font-normal">
+                  {purchaseSelected.membresia_nombre}
+                </p>
               </div>
               <div className="p-1 flex justify-between items-center">
                 <p>Beneficios:</p>
                 <ul className="list-disc font-normal">
-                  <li>Entrenador personal</li>
-                  <li>Estacionamiento</li>
+                  {purchaseSelected.membresia_beneficios.map(
+                    (beneficio, index) => (
+                      <li key={index}>{beneficio}</li>
+                    )
+                  )}
                 </ul>
               </div>
               <div className="p-1 flex justify-between">
                 <p>Fecha expiración:</p>
                 <p className="font-normal">
                   {format(
-                    new Date("2023-10-15T14:30:00Z"),
+                    new Date(purchaseSelected.fecha_expiracion),
                     "dd 'de' MMMM, yyyy",
                     { locale: es }
                   )}
                 </p>
               </div>
-              <div className="flex justify-between p-3">
-                <p>Total de la compra:</p>
-                <span className="text-2xl">{formatoPrecio.format(400)}</span>
+              <div className="flex justify-between p-1">
+                <p> Precio:</p>
+                <span className="text-2xl">
+                  {formatoPrecio.format(purchaseSelected.membresia_precio)}
+                </span>
               </div>
             </div>
           </div>
@@ -97,5 +104,6 @@ const InformeVentaMembresia = ({ closeModal }) => {
 
 InformeVentaMembresia.propTypes = {
   closeModal: PropTypes.func,
+  purchaseSelected: PropTypes.object,
 };
 export default InformeVentaMembresia;

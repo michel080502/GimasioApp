@@ -2,28 +2,122 @@ import { MdDelete } from "react-icons/md";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import { HiSearchCircle } from "react-icons/hi";
 import { BsEyeFill } from "react-icons/bs";
+import { FaFilter } from "react-icons/fa";
 
 import MenuExport from "../ui/MenuExport";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale"; // Importamos el idioma español
 import InformeVentaMembresia from "./InformeVentaMembresia";
+import clienteAxios from "../../config/axios";
+import Alerta from "../Alerta";
+import { exportDataToExcel } from "../../utils/exportDataToExcel";
 
 const MembresiasVentas = () => {
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [purchaseMembership, setPurchaseMembership] = useState([]);
+  const [purchaseSelected, setPurchaseSelected] = useState(null);
   const [optionsExport, setOptionsExport] = useState(null);
+  const [filterOptions, setFilterOptions] = useState(null);
   const [deleteVenta, setDeleteVenta] = useState(false);
+  const [membresiaFiltro, setMembresiaFiltro] = useState("");
   const [activeModal, setActiveModal] = useState(null);
+  const [alerta, setAlerta] = useState({ msg: "", error: false });
 
-  const openModalVenta = (id) => {
-    setActiveModal(id);
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
+
+  const openModalVenta = (purchase) => {
+    setActiveModal(purchase.compra_id), setPurchaseSelected(purchase);
   };
   const closeModal = () => setActiveModal(null);
+
   const toggleOptionsExport = () => {
     setOptionsExport((prev) => !prev);
+    setFilterOptions(null);
   };
+  const toggleFilterOptions = () => {
+    setFilterOptions((prev) => !prev);
+    setOptionsExport(null);
+  };
+  const handleMembresiaFiltro = (filtro) => {
+    setMembresiaFiltro((prev) => (prev === filtro ? "" : filtro));
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filtroData = () => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return purchaseMembership
+      .filter((item) => {
+        // Filtro por membresiaFiltro
+        if (membresiaFiltro && membresiaFiltro.length > 0) {
+          return membresiaFiltro.includes(item.membresia_nombre);
+        }
+        return true; // No hay filtro de membresía, incluir todos
+      })
+      .filter((item) =>
+        [
+          item.cliente_nombre.toLowerCase(),
+          item.cliente_apellido_paterno.toLowerCase(),
+          item.cliente_apellido_materno.toLowerCase(),
+        ].some((campo) => campo.includes(lowerSearchTerm))
+      );
+  };
+
+  const headers = [
+    "#",
+    "Nombre cliente",
+    "Numero telefono",
+    "Tipo membresia",
+    "Fecha de compra",
+    "Hora compra",
+    "Fecha expiracion",
+    "Precio",
+  ];
+
+  const generateExcelData = (data) => {
+    return data.map((item, index) => ({
+      "#": index + 1,
+      Nombre_cliente: `${item.cliente_nombre} ${item.cliente_apellido_materno} ${item.cliente_apellido_materno}`,
+      Numero_cliente: item.cliente_telefono,
+      Tipo_membresia: item.membresia_nombre,
+      Fecha_de_compra: format(
+        new Date(item.fecha_compra),
+        "dd 'de' MMMM, yyyy",
+        { locale: es }
+      ),
+      Hora_compra: format(new Date(item.fecha_compra), "hh:mm a", {
+        locale: es,
+      }),
+      Fecha_expiracion: format(
+        new Date(item.fecha_expiracion),
+        "dd 'de' MMMM, yyyy",
+        { locale: es }
+      ),
+      Precio: item.membresia_precio,
+    }));
+  };
+
   const handleDownload = async () => {
-    console.log("Descargando.....");
+    if (filtroData().length === 0) {
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
+    exportDataToExcel(
+      generateExcelData(filtroData()),
+      headers,
+      `reporte_ventas_membresia${membresiaFiltro || ""}`,
+      "download"
+    );
+    return mostrarAlerta("Reporte descargado", false);
   };
   const handleSendReport = async () => {
     console.log("Enviando.....");
@@ -41,62 +135,21 @@ const MembresiasVentas = () => {
     setDeleteVenta(null); // Reiniciar el estado
   };
 
-  const datosSimulados = [
-    {
-      id: 1,
-      fotoCliente: "https://via.placeholder.com/150",
-      nombreCliente: "Juan Pérez",
-      telefono: "123-456-7890",
-      precio: 499.99,
-      tipoMembresia: "Premium",
-      fechaCompra: "2023-11-01T10:00:00Z",
-    },
-    {
-      id: 2,
-      fotoCliente: "https://via.placeholder.com/150",
-      nombreCliente: "María García",
-      telefono: "987-654-3210",
-      precio: 299.99,
-      tipoMembresia: "Básica",
-      fechaCompra: "2023-10-15T14:30:00Z",
-    },
-    {
-      id: 3,
-      fotoCliente: "https://via.placeholder.com/150",
-      nombreCliente: "Carlos López",
-      telefono: "555-123-4567",
-      precio: 399.99,
-      tipoMembresia: "Estándar",
-      fechaCompra: "2023-09-20T09:15:00Z",
-    },
-    {
-      id: 4,
-      fotoCliente: "https://via.placeholder.com/150",
-      nombreCliente: "Ana Martínez",
-      telefono: "444-555-6666",
-      precio: 599.99,
-      tipoMembresia: "VIP",
-      fechaCompra: "2023-08-25T16:45:00Z",
-    },
-    {
-      id: 5,
-      fotoCliente: "https://via.placeholder.com/150",
-      nombreCliente: "Pedro Sánchez",
-      telefono: "111-222-3333",
-      precio: 199.99,
-      tipoMembresia: "Básica",
-      fechaCompra: "2023-07-30T12:00:00Z",
-    },
-    {
-      id: 6,
-      fotoCliente: "https://via.placeholder.com/150",
-      nombreCliente: "Laura Herrera",
-      telefono: "666-777-8888",
-      precio: 699.99,
-      tipoMembresia: "VIP",
-      fechaCompra: "2023-06-18T08:30:00Z",
-    },
-  ];
+  useEffect(() => {
+    const getPurchase = async () => {
+      try {
+        const { data } = await clienteAxios.get("/membresia/clientes");
+        setPurchaseMembership(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getPurchase();
+    setLoading(false);
+  }, []);
+
+  const { msg } = alerta;
+  if (loading) return <h1>Cargandoo....</h1>;
   return (
     <>
       <main>
@@ -106,7 +159,7 @@ const MembresiasVentas = () => {
             <div className=" grid grid-cols-3 items-center md:flex  justify-between">
               <div className="col-span-2 gap-2 ">
                 <h1 className="font-bold text-xl">Total de ventas</h1>
-                <p>300</p>
+                <p>{purchaseMembership.length}</p>
               </div>
 
               <div className="flex md:hidden w-full md:w-0 items-center">
@@ -120,6 +173,8 @@ const MembresiasVentas = () => {
               <form className="flex">
                 <input
                   type="text"
+                  value={searchTerm || ""}
+                  onChange={handleSearch}
                   placeholder="Buscar tipo membresia..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
                 />
@@ -131,7 +186,7 @@ const MembresiasVentas = () => {
                 </button>
               </form>
             </div>
-            <div className="hidden md:flex justify-center divide-x-4 h-auto items-center ">
+            <div className="hidden md:flex justify-center divide-x-4 gap-2 h-auto items-center ">
               <button
                 onClick={toggleOptionsExport}
                 type="button"
@@ -146,9 +201,38 @@ const MembresiasVentas = () => {
                   onSendReport={handleSendReport}
                 />
               )}
+
+              <button
+                type="button"
+                onClick={toggleFilterOptions}
+                className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
+              >
+                <FaFilter />
+                Filtro
+              </button>
+              {filterOptions && (
+                <div className="absolute  mt-40 -mr-24  border bg-gray-200  rounded shadow-lg w-48 z-10 flex flex-col divide-y divide-gray-400 text-base">
+                  {[
+                    ...new Set( // Creamos un conjunto unico de nombres SET() o sea que no muestrta duplicados y luego se convierte a arreglo con ...new
+                      purchaseMembership.map((item) => item.membresia_nombre)
+                    ),
+                  ].map((nombre, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleMembresiaFiltro(nombre)}
+                      className={`p-2 hover:bg-gray-300 ${
+                        membresiaFiltro === nombre ? "bg-gray-300" : ""
+                      } text-left`}
+                    >
+                      {nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
+            {msg && <Alerta alerta={alerta} />}
             <table className="min-w-full border border-gray-200 divide-y divide-gray-300 ">
               <thead className="bg-gray-100 text-xs ">
                 <tr className="text-center">
@@ -177,83 +261,95 @@ const MembresiasVentas = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200 font-medium text-center items-center">
-                {datosSimulados.map((venta, index) => (
-                  <tr key={venta.id} className="hover:bg-gray-100">
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      <img
-                        src={venta.fotoCliente}
-                        alt="Foto cliente"
-                        className="w-10 h-10 rounded-full ring-2 ring-red-800 m-auto"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {venta.nombreCliente}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {venta.telefono}
-                    </td>
-
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {venta.tipoMembresia}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {format(
-                        new Date(venta.fechaCompra),
-                        "dd 'de' MMMM, yyyy",
-                        { locale: es }
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      ${venta.precio.toFixed(2)}
-                    </td>
-                    <td className="px-6 flex gap-3 py-4 text-sm text-gray-700">
-                      <button
-                        className="text-cyan-500 hover:text-cyan-700 transition-colors duration-300"
-                        onClick={() => openModalVenta(venta.id)}
-                      >
-                        <BsEyeFill className="text-3xl scale-hover" />
-                      </button>
-                      {activeModal === venta.id && (
-                        <InformeVentaMembresia closeModal={closeModal} />
-                      )}
-                      <button
-                        className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
-                        onClick={() => toggleDelete(venta.id)}
-                      >
-                        <MdDelete className="text-3xl scale-hover" />
-                      </button>
-                      {/* Muestra recuadro de confirmacion */}
-                      {deleteVenta === venta.id && (
-                        <div className="absolute  mt-2 bg-white border rounded-lg shadow-lg w-56 z-10 p-4   right-10">
-                          <h1 className="text-lg font-semibold text-gray-700 mb-2">
-                            ¿Seguro que deseas eliminar la venta de <br />
-                            <span className="font-bold">
-                              {venta.nombreCliente}
-                            </span>
-                            ?
-                          </h1>
-                          <div className="flex justify-between">
-                            <button
-                              className="bg-gray-200 text-gray-700 py-1 px-3 rounded hover:bg-gray-300"
-                              onClick={cancelDelete}
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              className="bg-rose-500 text-white py-1 px-3 rounded hover:bg-rose-600"
-                              onClick={confirmDelete}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                {filtroData().length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="p-3 text-gray-600">
+                      No hay datos para mostrar o tienes algun filtro activo
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filtroData().map((venta, index) => (
+                    <tr key={venta.compra_id} className="hover:bg-gray-100">
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        <img
+                          src={venta.cliente_img_secure_url}
+                          alt="Foto cliente"
+                          className="w-10 h-10 rounded-full ring-2 ring-red-800 m-auto"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {`${venta.cliente_nombre} ${venta.cliente_apellido_paterno} ${venta.cliente_apellido_materno}`}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {venta.cliente_telefono}
+                      </td>
+
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {venta.membresia_nombre}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {format(
+                          new Date(venta.fecha_compra),
+                          "dd 'de' MMMM, yyyy",
+                          { locale: es }
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        ${venta.membresia_precio}
+                      </td>
+                      <td className="px-6 flex gap-3 py-4 text-sm text-gray-700">
+                        <button
+                          className="text-cyan-500 hover:text-cyan-700 transition-colors duration-300"
+                          onClick={() => openModalVenta(venta)}
+                        >
+                          <BsEyeFill className="text-3xl scale-hover" />
+                        </button>
+                        {activeModal === venta.compra_id && (
+                          <InformeVentaMembresia
+                            closeModal={closeModal}
+                            purchaseSelected={purchaseSelected}
+                          />
+                        )}
+                        <button
+                          className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
+                          onClick={() => toggleDelete(venta.compra_id)}
+                        >
+                          <MdDelete className="text-3xl scale-hover" />
+                        </button>
+                        {/* Muestra recuadro de confirmacion */}
+                        {deleteVenta === venta.compra_id && (
+                          <div className="absolute  mt-2 bg-white border rounded-lg shadow-lg w-56 z-10 p-2 right-10">
+                            <h1 className="text-base font-semibold text-gray-700 mb-2">
+                              ¿Seguro que deseas eliminar la venta de <br />
+                              <span className="font-bold">
+                                {venta.cliente_nombre}
+                              </span>
+                              ?
+                            </h1>
+                            <div className="flex justify-between">
+                              <button
+                                className="bg-gray-200 text-gray-700 py-1 px-3 rounded hover:bg-gray-300"
+                                onClick={cancelDelete}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                className="bg-rose-500 text-white py-1 px-3 rounded hover:bg-rose-600"
+                                onClick={confirmDelete}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {}
               </tbody>
             </table>
           </div>

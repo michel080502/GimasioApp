@@ -3,8 +3,14 @@ import { BsCreditCard2FrontFill } from "react-icons/bs";
 import { PiIdentificationCardFill } from "react-icons/pi";
 import PropTypes from "prop-types";
 
-const CardInforme = ({ typeTable, membresias }) => {
+const CardInforme = ({ typeTable, membresias, purchaseMembership }) => {
   const [activeButton, setActiveButton] = useState(null);
+  const [statusPurchase, setStatusPurchase] = useState({
+    activo: 0,
+    porVencer: 0,
+    venceHoy: 0,
+    vencida: 0,
+  });
   const [totalMembership, setTotalMembership] = useState(0);
 
   useEffect(() => {
@@ -13,8 +19,24 @@ const CardInforme = ({ typeTable, membresias }) => {
       setTotalMembership(total);
     };
 
+    const countPurchase = () => {
+      const activo = purchaseMembership.filter(
+        (purchase) => purchase.estado === "Activa"
+      ).length;
+      const porVencer = purchaseMembership.filter(
+        (purchase) => purchase.estado === "Por vencer"
+      ).length;
+      const venceHoy = purchaseMembership.filter(
+        (purchase) => purchase.estado === "Vence hoy"
+      ).length;
+      const vencida = purchaseMembership.filter(
+        (purchase) => purchase.estado === "Vencida"
+      ).length;
+      setStatusPurchase({ activo, porVencer, venceHoy, vencida });
+    };
+    countPurchase();
     countMemberships();
-  }, [membresias]);
+  }, [membresias.length, purchaseMembership]);
 
   // Manejar el clic en los botones
   const handleButtonClick = (type) => {
@@ -43,7 +65,7 @@ const CardInforme = ({ typeTable, membresias }) => {
         <div className="grid grid-cols-4">
           {/* Botón Activas */}
           <div className="py-2 border-r-2 text-center items-center font-semibold">
-            <h2 className="text-2xl">34</h2>
+            <h2 className="text-2xl">{statusPurchase.activo}</h2>
             <button
               type="button"
               className={`transition-all ease-out duration-300 ${
@@ -59,7 +81,7 @@ const CardInforme = ({ typeTable, membresias }) => {
 
           {/* Botón Próximas a vencer */}
           <div className="py-2 border-r-2 text-center items-center font-semibold">
-            <h2 className="text-2xl">34</h2>
+            <h2 className="text-2xl">{statusPurchase.porVencer}</h2>
             <button
               type="button"
               className={`transition-all ease-out duration-300 ${
@@ -76,7 +98,7 @@ const CardInforme = ({ typeTable, membresias }) => {
 
           {/* Botón Vencen hoy */}
           <div className="py-2 border-r-2 text-center items-center font-semibold">
-            <h2 className="text-2xl">34</h2>
+            <h2 className="text-2xl">{statusPurchase.venceHoy}</h2>
             <button
               type="button"
               className={`transition-all ease-out duration-300 ${
@@ -93,7 +115,7 @@ const CardInforme = ({ typeTable, membresias }) => {
 
           {/* Botón Vencidas */}
           <div className="py-2 text-center items-center font-semibold">
-            <h2 className="text-2xl">34</h2>
+            <h2 className="text-2xl">{statusPurchase.vencida}</h2>
             <button
               type="button"
               className={`transition-all ease-out duration-300 ${
@@ -134,6 +156,7 @@ CardInforme.propTypes = {
       disponible: PropTypes.bool,
     })
   ),
+  purchaseMembership: PropTypes.array,
 };
 
 export default CardInforme;
