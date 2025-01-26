@@ -11,12 +11,13 @@ import MenuExport from "../ui/MenuExport";
 import Modal from "../Modal";
 import Alerta from "../Alerta";
 
-import ViewRenovacion from "./ModalRenovacion";
+import ModalRenovacion from "./ModalRenovacion";
 
 import { useState } from "react";
 import { exportDataToExcel } from "../../utils/exportDataToExcel";
 
 const TablaCompras = ({ tipo, purchaseMembership }) => {
+  const [renewalClient, setRenewalClient] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [deleteMembresia, setDeleteMembresia] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,11 +33,15 @@ const TablaCompras = ({ tipo, purchaseMembership }) => {
     }, 4000);
   };
 
-  const openModal = (id) => {
-    setActiveModal(id); // Almacena el ID del elemento seleccionado
+  const openModal = (item) => {
+    setRenewalClient(item);
+    setActiveModal(item.compra_id); // Almacena el ID del elemento seleccionado
   };
 
-  const closeModal = () => setActiveModal(null);
+  const closeModal = () => {
+    setActiveModal(null);
+    setRenewalClient(null);
+  };
 
   const toggleOptionsExport = () => {
     setOptionsExport((prev) => !prev);
@@ -258,7 +263,7 @@ const TablaCompras = ({ tipo, purchaseMembership }) => {
               {filtrados().length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-3 text-gray-600">
-                    No hay datos para mostrar o tienes algun filtro activo 
+                    No hay datos para mostrar o tienes algun filtro activo
                   </td>
                 </tr>
               ) : (
@@ -311,19 +316,22 @@ const TablaCompras = ({ tipo, purchaseMembership }) => {
                       <td className="px-3 py-2 text-sm text-gray-700 h-full">
                         <div className="flex items-center justify-center gap-4 h-full">
                           {/* Botón Renovar */}
-                          {(item.estado === "vencida" ||
-                            item.estado === "vence hoy") && (
+                          {(item.estado === "Vencida" ||
+                            item.estado === "Vence hoy") && (
                             <button
                               className="text-blue-400 hover:text-blue-700 transition-colors duration-300"
-                              onClick={() => openModal(item.id)} // Abre modal solo para este item
+                              onClick={() => openModal(item)} // Abre modal solo para este item
                             >
                               <BsBootstrapReboot className="text-3xl" />
                             </button>
                           )}
                           {/* MODAL RENOVACION */}
-                          {activeModal === item.id && ( // Verifica si el modal es para este item
+                          {activeModal === item.compra_id && ( // Verifica si el modal es para este item
                             <Modal closeModal={closeModal}>
-                              <ViewRenovacion closeModal={closeModal} />
+                              <ModalRenovacion
+                                closeModal={closeModal}
+                                renewalClient={renewalClient}
+                              />
                             </Modal>
                           )}
 

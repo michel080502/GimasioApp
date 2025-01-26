@@ -49,7 +49,7 @@ const CardInforme = ({ typeTable, membresias, purchaseMembership }) => {
       <div className="p-2 bg-white rounded-md shadow-lg shadow-gray-500/50 col-span-2">
         <div className="p-2 border-b-2 border-red-700 text-lg font-semibold flex justify-between items-center">
           <div>
-            <h1>Informe de membresias</h1>
+            <h1>Informe de membresias de los clientes</h1>
             <p
               className={` text-sm font-normal ${
                 activeButton !== null ? "" : "hidden"

@@ -13,7 +13,7 @@ const PointSellProducts = () => {
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [productsSelect, setProductsSelect] = useState([]);
   const [saleMade, setSaleMade] = useState(null);
-  const [infoSale, setInfoSale] = useState(null);
+  // const [infoSale, setInfoSale] = useState(null);
   const [totalVenta, setTotalVenta] = useState(0); // Variable para el total de la venta
   // Calcular el total de la venta cada vez que productsSelect cambia
   useEffect(() => {
@@ -49,7 +49,7 @@ const PointSellProducts = () => {
   }, []);
 
   const seleccionarCliente = (cliente) => {
-    setClienteSeleccionado(cliente);
+    setClienteSeleccionado(cliente.id);
   };
 
   const handleNameExternal = (e) => {
@@ -122,11 +122,12 @@ const PointSellProducts = () => {
       // setProductsSelect([]); // Limpiar productos seleccionados
       // setClienteSeleccionado(null); // Limpiar cliente seleccionado
     }
-    // return;
+    return;
     // try {
     //   const { data } = clienteAxios.post("/compra/producto/", {
     //     cliente: clienteSeleccionado,
     //     productos: productosInfo,
+    //     totalVenta
     //   });
     //   console.log(data);
     // } catch (error) {

@@ -182,7 +182,7 @@ const obtenerMembresiaPorId = async (req, res) => {
 
 const obtenerMembresiasClientes = async (req, res) => {
   try {
-    const querySelect = `SELECT * FROM vista_compras_membresias`;
+    const querySelect = `SELECT * FROM vista_membresias_clientes`;
     const { rows: membresiasClientes } = await pool.query(querySelect);
     return res.status(200).json(membresiasClientes);
   } catch (error) {
