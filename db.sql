@@ -27,7 +27,8 @@ CREATE TABLE clientes (
     matricula VARCHAR(50) NOT NULL UNIQUE,
     img_public_id VARCHAR(255),
     img_secure_url VARCHAR(255),
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    eliminado BOOLEAN DEFAULT FALSE
 );
 
 -- Tabla de visitas
@@ -47,7 +48,7 @@ CREATE TABLE visitas_compras (
 CREATE TABLE categorias_productos (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(20) NOT NULL,
-    archived BOOLEAN DEFAULT false,
+    eliminado BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE productos (
@@ -62,7 +63,7 @@ CREATE TABLE productos (
     img_public_id VARCHAR(255),
     img_secure_url VARCHAR(255),
     disponible BOOLEAN DEFAULT TRUE,
-    archived BOOLEAN DEFAULT FALSE,
+    eliminado BOOLEAN DEFAULT FALSE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_categoria FOREIGN KEY (categoria_id) 
     REFERENCES categorias_productos (id) ON DELETE SET DEFAULT
@@ -76,7 +77,7 @@ CREATE TABLE membresias (
     duracion_dias INT NOT NULL,
     precio NUMERIC(10, 2) NOT NULL,
     disponible BOOLEAN DEFAULT TRUE,
-    archived BOOLEAN DEFAULT FALSE
+    eliminado BOOLEAN DEFAULT FALSE
 );
 
 -- Tabla de compras de membresías
@@ -84,12 +85,19 @@ CREATE TABLE compras_membresias (
     id SERIAL PRIMARY KEY,
     cliente_id INT NOT NULL,
     membresia_id INT NOT NULL,
-    fecha_compra TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_expiracion TIMESTAMP NOT NULL,
-    fecha_renovacion TIMESTAMP NULL DEFAULT NULL, 
+    fecha_compra TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    fecha_expiracion TIMESTAMP WITH TIME ZONE NOT NULL,
+    fecha_renovacion TIMESTAMP WITH TIME ZONE NULL DEFAULT NULL, 
     CONSTRAINT fk_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE CASCADE,
     CONSTRAINT fk_membresia FOREIGN KEY (membresia_id) REFERENCES membresias (id) ON DELETE CASCADE
 );
+
+--- CAMBIAR ZONA HORARIA
+ALTER TABLE compras_membresias
+ALTER COLUMN fecha_compra TYPE TIMESTAMP WITH TIME ZONE USING fecha_compra AT TIME ZONE 'UTC',
+ALTER COLUMN fecha_expiracion TYPE TIMESTAMP WITH TIME ZONE USING fecha_expiracion AT TIME ZONE 'UTC',
+ALTER COLUMN fecha_renovacion TYPE TIMESTAMP WITH TIME ZONE USING fecha_renovacion AT TIME ZONE 'UTC';
+
 
 -- Tabla de ventas
 CREATE TABLE ventas (
@@ -106,7 +114,6 @@ CREATE TABLE ventas (
     )
 );
 
-
 -- Tabla de detalles de ventas
 CREATE TABLE detalles_ventas (
     id SERIAL PRIMARY KEY,
@@ -115,16 +122,16 @@ CREATE TABLE detalles_ventas (
     cantidad INT NOT NULL,
     precio_unitario NUMERIC(10, 2) NOT NULL,
     subtotal NUMERIC(10, 2) NOT NULL,
-    CONSTRAINT fk_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE CASCADE,
-    CONSTRAINT fk_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE CASCADE
+    CONSTRAINT fk_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE SET NULL,
+    CONSTRAINT fk_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE SET NULL
 );
 
 -- Tabla de entrenadores
 CREATE TABLE entrenadores (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
-    apellidoPaterno VARCHAR(255) NOT NULL,
-    apellidoMaterno VARCHAR(255) NOT NULL,
+    apellido_paterno VARCHAR(255) NOT NULL,
+    apellido_materno VARCHAR(255) NOT NULL,
     especialidad VARCHAR(255) NOT NULL,
     telefono VARCHAR(15),
     email VARCHAR(255) UNIQUE,
@@ -148,30 +155,74 @@ CREATE TABLE configuracion_gym (
     horario_apertura TIME NOT NULL,
     horario_cierre TIME NOT NULL,
     precio_visita NUMERIC(10, 2) NOT NULL,
-    reportes_hora_generacion TIME NOT NULL,
     email_envio_reportes VARCHAR(255) NOT NULL,
     direccion VARCHAR(255),
     telefono VARCHAR(15),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );  
 
--- Vista para compras membresias y cliente 
--- vista_ultima_compra_membresia
-SELECT cm.id,
+CREATE OR REPLACE VIEW vista_membresias_clientes AS
+WITH ranked_compras AS (
+    SELECT cm.*,
+           ROW_NUMBER() OVER (PARTITION BY cm.cliente_id ORDER BY cm.fecha_compra DESC) AS rn
+    FROM compras_membresias cm
+)
+SELECT 
+    cm.id AS compra_id,
+    c.id AS cliente_id,
     c.nombre AS cliente_nombre,
-    c.id AS cliente_id
     c.apellido_paterno AS cliente_apellido_paterno,
     c.apellido_materno AS cliente_apellido_materno,
-    c.img_public_id AS cliente_img_id,
-    m.nombre AS membresia,
+    c.telefono AS cliente_telefono,
+    c.email AS cliente_email,
+    c.img_secure_url AS cliente_img_secure_url,
+    m.id AS membresia_id,
+    m.nombre AS membresia_nombre,
+    m.beneficios AS membresia_beneficios,
+    m.precio AS membresia_precio,
     cm.fecha_compra,
     cm.fecha_expiracion,
+    cm.fecha_renovacion,
+    GREATEST(0::numeric, EXTRACT(day FROM cm.fecha_expiracion - NOW())) AS dias_restantes,
+    CASE
+        WHEN cm.fecha_expiracion::date < CURRENT_DATE THEN 'Vencida'
+        WHEN cm.fecha_expiracion::date = CURRENT_DATE THEN 'Vence hoy'
+        WHEN cm.fecha_expiracion::date > CURRENT_DATE THEN
+            CASE
+                WHEN cm.fecha_expiracion::date <= (CURRENT_DATE + INTERVAL '7 days') THEN 'Por vencer'
+                ELSE 'Activa'
+            END
+    END AS estado
+FROM ranked_compras cm
+JOIN clientes c ON cm.cliente_id = c.id
+JOIN membresias m ON cm.membresia_id = m.id
+WHERE cm.rn = 1;
+
+
+
+-- Vista para compras membresias y cliente 
+CREATE OR REPLACE VIEW vista_compras_membresias AS
+SELECT cm.id AS compra_id,
+    c.id AS cliente_id,
+    c.nombre AS cliente_nombre,
+    c.apellido_paterno AS cliente_apellido_paterno,
+    c.apellido_materno AS cliente_apellido_materno,
+    c.telefono AS cliente_telefono,
+    c.email AS cliente_email,
+    c.img_secure_url AS cliente_img_secure_url,
+    m.id AS membresia_id,
+    m.nombre AS membresia_nombre,
+    m.beneficios AS membresia_beneficios,
+    m.precio AS membresia_precio,
+    cm.fecha_compra,
+    cm.fecha_expiracion,
+    cm.fecha_renovacion,
     GREATEST(0::numeric, EXTRACT(day FROM cm.fecha_expiracion::timestamp with time zone - now())) AS dias_restantes,
         CASE
-            WHEN cm.fecha_expiracion = CURRENT_DATE THEN 'Vence hoy'::text
-            WHEN cm.fecha_expiracion > CURRENT_DATE THEN
+            WHEN cm.fecha_expiracion::date = CURRENT_DATE THEN 'Vence hoy'::text
+            WHEN cm.fecha_expiracion::date > CURRENT_DATE THEN
             CASE
-                WHEN cm.fecha_expiracion <= (CURRENT_DATE + '7 days'::interval) THEN 'Por vencer'::text
+                WHEN cm.fecha_expiracion::date <= (CURRENT_DATE + INTERVAL '7 days') THEN 'Por vencer'::text
                 ELSE 'Activa'::text
             END
             ELSE 'Vencida'::text
@@ -179,6 +230,20 @@ SELECT cm.id,
    FROM compras_membresias cm
      JOIN clientes c ON cm.cliente_id = c.id
      JOIN membresias m ON cm.membresia_id = m.id;
+
+
+-- Vista para los clientes sin membresia activa
+CREATE OR REPLACE VIEW vista_clientes_sin_membresia AS
+SELECT c.id AS cliente_id,
+    c.nombre AS cliente_nombre,
+    c.apellido_paterno AS cliente_apellido_paterno,
+    c.apellido_materno AS cliente_apellido_materno,
+    c.telefono AS cliente_telefono,
+    c.email AS cliente_email,
+    c.img_secure_url AS cliente_img_secure_url
+   FROM clientes c
+     LEFT JOIN compras_membresias cm ON c.id = cm.cliente_id AND cm.fecha_expiracion >= now()
+  WHERE cm.id IS NULL;
 
 
 -- Crear vista para el inventario de productos con nombre de categoría y nivel de stock
@@ -210,22 +275,24 @@ LEFT JOIN
 ON 
     p.categoria_id = c.id
 WHERE 
-    p.archived = FALSE; 
+    p.eliminado = FALSE; 
 
 
 -- Vista para consultar la ultima membresia adquirida por el usuario
--- vista_ultima_compra_membresia
+CREATE OR REPLACE VIEW vista_ultima_compra_membresia AS
 SELECT cm.id AS compra_id,
     cm.cliente_id,
+    cm.membresia_id,
     c.nombre AS cliente_nombre,
     m.nombre AS membresia_nombre,
     cm.fecha_compra,
     cm.fecha_expiracion,
+    cm.fecha_renovacion,
         CASE
-            WHEN cm.fecha_expiracion = CURRENT_DATE THEN 'vence hoy'::text
-            WHEN cm.fecha_expiracion > CURRENT_DATE THEN
+            WHEN cm.fecha_expiracion::date = CURRENT_DATE THEN 'vence hoy'::text
+            WHEN cm.fecha_expiracion::date > CURRENT_DATE THEN
             CASE
-                WHEN cm.fecha_expiracion <= (CURRENT_DATE + '7 days'::interval) THEN 'por vencer'::text
+                WHEN cm.fecha_expiracion::date <= (CURRENT_DATE + INTERVAL '7 days') THEN 'por vencer'::text
                 ELSE 'activa'::text
             END
             ELSE 'vencida'::text

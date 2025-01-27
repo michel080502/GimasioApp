@@ -21,32 +21,31 @@ const creatTrainer = async (req, res, next) => {
     !telefono ||
     !email === undefined
   ) {
-    return res
-      .status(400)
-      .json({ error: "Todos los campos son obligatorios." });
+    const error = new Error("Todos los campos son obligatorios");
+    return res.status(400).json({ msg: error.message });
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: "El formato del email es inválido." });
+    const error = new Error("El formato email no es valido");
+    return res.status(400).json({ msg: error.message });
   }
 
   const telefonoRegex = /^[0-9]{10}$/;
   if (!telefonoRegex.test(telefono)) {
-    return res
-      .status(400)
-      .json({ error: "El teléfono debe contener 10 dígitos numéricos." });
+    const error = new Error("El teléfono debe contener 10 dígitos numéricos.");
+    return res.status(400).json({ msg: error.message });
   }
   try {
     const query = "SELECT * FROM entrenadores WHERE email = $1";
     const { rows: trainer } = await pool.query(query, [email]);
     if (trainer.length > 0) {
-      return res
-        .status(400)
-        .json({ error: "El email ya se encuentra registrado." });
+      const error = new Error("El email ya está registrado");
+      return res.status(409).json({ msg: error.message });
     }
     let img = {};
     if (!req.files?.img) {
-      return res.status(400).json({ error: "La imagen es obligatoria." });
+      const error = new Error("La imagen este obligatoria");
+      return res.status(400).json({ msg: error.message });
     }
     const resultImg = await uploadImage(req.files.img.tempFilePath);
     img = {
@@ -54,7 +53,8 @@ const creatTrainer = async (req, res, next) => {
       secure_url: resultImg.secure_url,
     };
     await fs.unlink(req.files.img.tempFilePath);
-    const queryInsert = `INSERT INTO entrenadores(nombre, apellido_paterno, apellido_materno, especialidad, telefono, email, activo,img_public_id, img_secure_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`;
+
+    const queryInsert = `INSERT INTO entrenadores(nombre, apellido_paterno, apellido_materno, especialidad, telefono, email, img_public_id, img_secure_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
     const { rows: newTrainer } = await pool.query(queryInsert, [
       nombre,
       apellidoPaterno,
@@ -62,7 +62,6 @@ const creatTrainer = async (req, res, next) => {
       especialidad,
       telefono,
       email,
-      true,
       img.public_id || null,
       img.secure_url || null,
     ]);
@@ -73,8 +72,8 @@ const creatTrainer = async (req, res, next) => {
       trainer: newTrainer[0],
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Error al crear el entrenador." });
+    console.error(error);
+    res.status(500).json({ msg: "Error al crear el entrenador." });
   }
 };
 const getTrainers = async (req, res) => {
@@ -84,15 +83,15 @@ const getTrainers = async (req, res) => {
     res.status(200).json(trainers);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Error al obtener los entrenadores." });
+    res.status(500).json({ msg: "Error al obtener los entrenadores." });
   }
 };
 const updatedTrainer = async (req, res) => {
   const { id } = req.params;
   const {
     nombre,
-    apellidoPaterno,
-    apellidoMaterno,
+    apellido_paterno,
+    apellido_materno,
     especialidad,
     telefono,
     email,
@@ -100,60 +99,56 @@ const updatedTrainer = async (req, res) => {
 
   // Validación del id
   if (!id || isNaN(id) || parseInt(id) <= 0) {
-    return res.status(400).json({ error: "El id proporcionado no es válido." });
+    const error = new Error("El id no es valido");
+    return res.status(400).json({ msg: error.msg });
   }
-  // Validaciones de campos
-  if (
-    !nombre ||
-    !apellidoPaterno ||
-    !apellidoMaterno ||
-    !especialidad ||
-    !telefono ||
-    !email === undefined
-  ) {
-    return res
-      .status(400)
-      .json({ error: "Todos los campos son obligatorios." });
-  }
+ 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: "El formato del email es inválido." });
+  if (!emailRegex.test(email) && email) {
+    const error = new Error("El formato email no es valido");
+    return res.status(400).json({ msg: error.message });
   }
   const telefonoRegex = /^[0-9]{10}$/;
-  if (!telefonoRegex.test(telefono)) {
-    return res
-      .status(400)
-      .json({ error: "El teléfono debe contener 10 dígitos numéricos." });
+  if (!telefonoRegex.test(telefono) && telefono) {
+    const error = new Error("El telefono debe contener 10 numeros.");
+    return res.status(400).json({ msg: error.message });
   }
   try {
     const query = "SELECT * FROM entrenadores WHERE id = $1";
     const { rows: trainer } = await pool.query(query, [id]);
     if (trainer.length === 0) {
-      return res.status(404).json({
-        error: "El entrenador no esta registrado en la base de datos.",
-      });
+      const error = new Error("Entrenador no registrado");
+      return res.status(404).json({ msg: error.message });
     }
-    const queryUpdate = `UPDATE entrenadores SET nombre = $1, apellido_paterno = $2, apellido_materno = $3, especialidad = $4, telefono = $5, email = $6 WHERE id = $7 RETURNING *`;
+    const queryUpdate = `
+  UPDATE entrenadores
+  SET 
+    nombre = COALESCE($1, nombre),
+    apellido_paterno = COALESCE($2, apellido_paterno),
+    apellido_materno = COALESCE($3, apellido_materno),
+    especialidad = COALESCE($4, especialidad),
+    telefono = COALESCE($5, telefono),
+    email = COALESCE($6, email)
+  WHERE id = $7
+  RETURNING *`;
+
     const { rows: updatedTrainer } = await pool.query(queryUpdate, [
-      nombre !== undefined ? nombre : trainer[0].nombre,
-      apellidoPaterno !== undefined
-        ? apellidoPaterno
-        : trainer[0].apellido_paterno,
-      apellidoMaterno !== undefined
-        ? apellidoMaterno
-        : trainer[0].apellido_materno,
-      especialidad !== undefined ? especialidad : trainer[0].especialidad,
-      telefono !== undefined ? telefono : trainer[0].telefono,
-      email !== undefined ? email : trainer[0].email,
+      nombre,
+      apellido_paterno,
+      apellido_materno,
+      especialidad,
+      telefono,
+      email,
       id,
     ]);
+
     res.json({
       msg: "Entrenador actualizado exitosamente.",
       trainer: updatedTrainer[0],
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Error al actualizar el entrenador." });
+    res.status(500).json({ msg: "Error al actualizar el entrenador." });
   }
 };
 const updateActive = async (req, res) => {
@@ -161,22 +156,24 @@ const updateActive = async (req, res) => {
   const { activo } = req.body;
   // Validación del id
   if (!id || isNaN(id) || parseInt(id) <= 0) {
-    return res.status(400).json({ error: "El id proporcionado no es válido." });
+    const error = new Error("El id proporcionado no es válido.");
+    return res.status(400).json({ msg: error.message });
   }
   // Validación del campo activo
   if (typeof activo !== "boolean") {
-    return res.status(400).json({
-      error:
-        "El campo activo es obligatorio y debe ser de tipo booleano (true o false).",
-    });
+    const error = new Error(
+      "El campo activo es obligatorio y debe ser de tipo booleano (true o false)."
+    );
+    return res.status(400).json({ msg: error.message });
   }
   try {
     const query = "SELECT * FROM entrenadores WHERE id = $1";
     const { rows: trainer } = await pool.query(query, [id]);
     if (trainer.length === 0) {
-      return res.status(404).json({
-        error: "El entrenador no esta registrado en la base de datos.",
-      });
+      const error = new Error(
+        "El entrenador no esta registrado en la base de datos."
+      );
+      return res.status(404).json({ msg: error.message });
     }
     const queryUpdate =
       "UPDATE entrenadores SET activo = $1 WHERE id = $2 RETURNING *";
@@ -186,22 +183,22 @@ const updateActive = async (req, res) => {
     console.log(error);
     res
       .status(500)
-      .json({ error: "Error al actualizar el estado del entrenador." });
+      .json({ msg: "Error al actualizar el estado del entrenador." });
   }
 };
 const deleteTrainer = async (req, res) => {
   const { id } = req.params;
   // Validación del id
   if (!id || isNaN(id) || parseInt(id) <= 0) {
-    return res.status(400).json({ error: "El id proporcionado no es válido." });
+    const error = new Error("El id proporcionado no es válido.");
+    return res.status(400).json({ msg: error.message });
   }
   try {
     const query = "SELECT * FROM entrenadores WHERE id = $1";
     const { rows: trainer } = await pool.query(query, [id]);
     if (trainer.length === 0) {
-      return res.status(404).json({
-        error: "El entrenador no esta registrado en la base de datos.",
-      });
+      const error = new Error("El entrenador no esta registrado");
+      return res.status(404).json({ msg: error.message });
     }
     const queryDelete = "DELETE FROM entrenadores WHERE id = $1";
     await pool.query(queryDelete, [id]);
@@ -211,8 +208,14 @@ const deleteTrainer = async (req, res) => {
     return res.json({ msg: "Entrenador eliminado exitosamente." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Error al eliminar el entrenador." });
+    res.status(500).json({ msg: "Error al eliminar el entrenador." });
   }
 };
 
-export { creatTrainer, getTrainers, updateActive, updatedTrainer, deleteTrainer };
+export {
+  creatTrainer,
+  getTrainers,
+  updateActive,
+  updatedTrainer,
+  deleteTrainer,
+};

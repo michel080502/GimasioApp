@@ -175,7 +175,7 @@ const crearCategoria = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al registrar la categoría" });
+    res.status(500).json({ msg: "Error al registrar la categoría" });
   }
 };
 
@@ -188,7 +188,7 @@ const deleteProducto = async (req, res) => {
       const error = new Error("Producto no encontrado");
       return res.status(404).json({ msg: error.message });
     }
-    const logicalErase = `UPDATE productos SET archived = $1 WHERE id = $2`;
+    const logicalErase = `UPDATE productos SET eliminado = $1 WHERE id = $2`;
     await pool.query(logicalErase, [true, id]);
     await deleteImage(producto[0].img_public_id);
     res.json({ msg: "Producto eliminado" });

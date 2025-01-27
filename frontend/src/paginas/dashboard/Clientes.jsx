@@ -10,7 +10,8 @@ const Clientes = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [reload, setReload] = useState(null);
+  const [selectedClient, setSelectedClient] = useState(null);
 
   // Traer los clientes al cargar componente
   useEffect(() => {
@@ -27,11 +28,25 @@ const Clientes = () => {
     };
 
     getClientes();
-  }, []);
+  }, [reload]);
 
+  const dataUpdate = (client) => {
+    setClientes((prev) =>
+      prev.map((item) =>
+        item.id === client.id ? { ...item, ...client } : item
+      )
+    );
+  };
 
-  const openModal = (modalName, id = null) => {
-    setActiveModal(modalName), setSelectedId(id);
+  const reloadContent = () => {
+    setReload((prev) => !prev);
+  };
+
+  const dataDeleted = (id) => {
+    setClientes((prev) => prev.filter((cliente) => cliente.id !== id));
+  };
+  const openModal = (modalName, client = null) => {
+    setActiveModal(modalName), setSelectedClient(client);
   };
   const closeModal = () => setActiveModal(null);
   if (loading) return <p>Cargando....</p>;
@@ -54,7 +69,12 @@ const Clientes = () => {
       {/* <div className="grid grid-cols-3 gap-4 ">
          <CardInforme clientes={clientes} typeData={handleFilterChange} /> 
       </div> */}
-      <TablaClientes clientes={clientes} setClientes={setClientes} openModal={openModal}  />
+      <TablaClientes
+        clientes={clientes}
+        setClientes={setClientes}
+        openModal={openModal}
+        dataDeleted={dataDeleted}
+      />
 
       {/* Modal de registro */}
       {activeModal === "registrar" && (
@@ -66,7 +86,7 @@ const Clientes = () => {
             </button>
           </div>
 
-          <FormRegistro />
+          <FormRegistro reloadContent={reloadContent} />
         </Modal>
       )}
       {/* Modal de registro */}
@@ -79,10 +99,9 @@ const Clientes = () => {
             </button>
           </div>
 
-          <FormUpdate id={selectedId} />
+          <FormUpdate selectedClient={selectedClient} dataUpdate={dataUpdate} />
         </Modal>
       )}
-      
     </div>
   );
 };

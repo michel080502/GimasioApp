@@ -1,33 +1,42 @@
 import pool from "../config/db.js";
 
 const comprarMembresia = async (req, res) => {
-  const { id_cliente, id_membresia, duracion_membresia } = req.body;
+  const { id_cliente, id_membresia } = req.body;
   try {
-    const queryFindMembresia = `SELECT * FROM public.vista_ultima_compra_membresia WHERE cliente_id = $1;`;
-    const { rows: clienteMembresia } = await pool.query(queryFindMembresia, [
-      id_cliente,
-    ]);
-    if (clienteMembresia.length === 0) {
-      return res.status(404).json({
-        msg: "Error al recuperar datos del cliente",
-      });
+    const findCliente = `SELECT * FROM clientes WHERE id = $1`;
+    const { rows: clienteExiste } = await pool.query(findCliente, [id_cliente]);
+    if (clienteExiste.length === 0) {
+      const error = new Error("No existe el cliente");
+      return res.status(404).json({ msg: error.message });
     }
+    const queryFindMembresiaActiva = `SELECT * FROM vista_ultima_compra_membresia WHERE cliente_id = $1;`;
+    const { rows: clienteMembresiaActiva } = await pool.query(
+      queryFindMembresiaActiva,
+      [id_cliente]
+    );
+
     //Valida si el cliente ya cuenta con una membresia y que este activa
-    if (clienteMembresia[0].estado == "activa") {
-      return res.status(404).json({
-        msg: "El cliente ya cuenta con una membresia activa y no puede adquirir otra simultaneamente",
-      });
+    if (
+      clienteMembresiaActiva.length > 0 &&
+      clienteMembresiaActiva[0].estado === "activa"
+    ) {
+      const error = new Error(
+        "El cliente ya cuenta con una membresia activa y no puede adquirir otra simultaneamente"
+      );
+      console.log(clienteMembresiaActiva);
+      return res.status(404).json({ msg: error.message });
     }
     const queryFindMemb = `SELECT * FROM membresias WHERE disponible = true AND id = $1`;
     const { rows: membresia } = await pool.query(queryFindMemb, [id_membresia]);
     //Valida si la membresia existe en la base de datos mediante su ID y este disponible para su compra
     if (membresia.length === 0) {
-      return res.status(404).json({
-        msg: "Membresia no encontrada en la base de datos o no disponible para su compra",
-      });
+      const error = new Error(
+        "Membresia no encontrada en la base de datos o no disponible para su compra"
+      );
+      return res.status(404).json({ msg: error.message });
     }
     const queryInsert = `INSERT INTO compras_membresias(cliente_id, membresia_id, fecha_compra, fecha_expiracion)
-	VALUES ($1, $2, NOW(), NOW() + INTERVAL '${duracion_membresia} days') RETURNING *`;
+	VALUES ($1, $2, NOW(), NOW() + INTERVAL '${membresia[0].duracion_dias} days') RETURNING *`;
     const { rows: compraMembresia } = await pool.query(queryInsert, [
       id_cliente,
       id_membresia,
@@ -52,7 +61,7 @@ const renovarMembresia = async (req, res) => {
     isNaN(id_membresia)
   ) {
     return res.status(400).json({
-      msg: "Los campos id_cliente e id_membresia son obligatorios y deben ser numericos",
+      msg: "Los campos cliente y membresia son obligatorios y deben ser numericos",
     });
   }
 
@@ -71,15 +80,12 @@ const renovarMembresia = async (req, res) => {
     }
 
     //Valida si se la membresia esta vencida para hacer la renovacion de la misma o si se vence ese mismo dia
-    if (
-      ultimaCompra[0].estado == "activa" &&
-      ultimaCompra[0].fecha_expiracion > new Date()
-    ) {
+    if (ultimaCompra[0].estado == "activa" && ultimaCompra[0].fecha_expiracion > new Date()) {
       return res.status(404).json({
         msg: "La membresia del cliente aun esta activa, no es necesario renovarla",
       });
     }
-
+    
     //Valida si la membresia existe en la base de datos mediante su ID y este disponible para su compra
     const queryFindMemb = `SELECT * FROM membresias WHERE disponible = true AND id = $1`;
     const { rows: membresia } = await pool.query(queryFindMemb, [id_membresia]);
@@ -123,6 +129,7 @@ const renovarMembresia = async (req, res) => {
     res.status(500).json({ msg: "Hubo un error en el servidor" });
   }
 };
+
 
 const comprarProductos = async (req, res) => { 
   const { cliente, productos, total } = req.body;

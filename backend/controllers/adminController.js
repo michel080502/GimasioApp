@@ -69,6 +69,8 @@ const perfil = (req, res) => {
     apellidoPaterno: admin.apellido_paterno,
     apellidoMaterno: admin.apellido_materno,
     email: admin.email,
+    telefono: admin.telefono,
+    fecha_creacion: admin.fecha_creacion,
   });
 };
 
@@ -129,11 +131,13 @@ const autenticar = async (req, res) => {
     const token = generarJWT(usuario.id);
 
     res.json({
-      id: usuario.id, // Usamos 'id' porque en PostgreSQL es el nombre del campo
+      id: usuario.id,
       nombre: usuario.nombre,
       apellidoPaterno: usuario.apellido_paterno,
       apellidoMaterno: usuario.apellido_materno,
       email: usuario.email,
+      telefono: usuario.telefono,
+      fecha_creacion: usuario.fecha_creacion,
       token,
     });
   } catch (error) {
@@ -252,26 +256,24 @@ const actualizar = async (req, res) => {
     const updateQuery = `
       UPDATE admins
       SET 
-        nombre = $1,
-        apellido_paterno = $2,
-        apellido_materno = $3,
-        email = $4,
-        telefono = $5
+        nombre = COALESCE($1, nombre),
+        apellido_paterno = COALESCE($2, apellido_paterno),
+        apellido_materno = COALESCE($3, apellido_materno),
+        email = COALESCE($4, email),
+        telefono = COALESCE($5, telefono)
       WHERE id = $6
     `;
 
-    const { rows: updatedAdmin } = await pool.query(updateQuery, [
-      nombre !== undefined ? nombre : admin[0].nombre,
-      apellidoPaterno !== undefined
-        ? apellidoPaterno
-        : admin[0].apellido_paterno,
-      apellidoMaterno !== undefined
-        ? apellidoMaterno
-        : admin[0].apellido_materno,
-      email !== undefined ? email : admin[0].email,
-      telefono !== undefined ? telefono : admin[0].telefono,
+    const values = [
+      nombre,
+      apellidoPaterno,
+      apellidoMaterno,
+      email,
+      telefono,
       id,
-    ]);
+    ];
+
+    const { rows: updatedAdmin } = await pool.query(updateQuery, values);
 
     res.json({
       msg: "Usuario actualizado exitosamente.",
@@ -359,7 +361,8 @@ const actualizarInfoGym = async (req, res) => {
 };
 
 const obtenerInfoGym = async (req, res) => {
-  const query = "SELECT nombre_gimnasio, horario_apertura, horario_cierre, precio_visita, email_envio_reportes, direccion, telefono FROM configuracion_gym";
+  const query =
+    "SELECT nombre_gimnasio, horario_apertura, horario_cierre, precio_visita, email_envio_reportes, direccion, telefono FROM configuracion_gym";
   try {
     const { rows: config } = await pool.query(query);
     if (config.length === 0) {

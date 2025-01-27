@@ -16,7 +16,7 @@ router.post(
   creatTrainer
 );
 router.get("/", getTrainers);
-router.put("/actualizarDisponible/:id", updateActive);
+router.put("/actualizar-activo/:id", updateActive);
 router.put("/actualizar/:id", updatedTrainer);
 router.delete("/eliminar/:id", deleteTrainer);
 

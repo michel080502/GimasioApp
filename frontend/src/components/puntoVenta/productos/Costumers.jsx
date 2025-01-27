@@ -8,7 +8,7 @@ const Costumers = ({ clientes, seleccionarCliente }) => {
 
   // FIltrar clientes segun el termino de busqueda
   const clientesFiltrados = clientes.filter((cliente) =>
-    [cliente.cliente_nombre, cliente.cliete_telefono, cliente.cliente_email].some((campo) =>
+    [cliente.nombre, cliente.telefono, cliente.email].some((campo) =>
       campo.toLowerCase().includes(busqueda.toLowerCase())
     )
   );
@@ -40,7 +40,7 @@ const Costumers = ({ clientes, seleccionarCliente }) => {
               <HiSearchCircle className="text-2xl" />
             </button>
           </form>
-          <div className="grid grid-cols-4 gap-2 max-h-80 overflow-y-auto">
+          <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto">
             {clientesFiltrados.map((item, index) => (
               <article
                 key={index}
@@ -51,16 +51,16 @@ const Costumers = ({ clientes, seleccionarCliente }) => {
                 </div>
                 <img
                   className="w-24 h-24 p m-auto rounded-lg shadow-lg"
-                  src={item.cliente_img_secure_url}
+                  src={item.img_secure_url}
                   alt=""
                 />
                 <div className="text-sm">
                   <p>Nombre:</p>
-                  <p className="font-normal">{`${item.cliente_nombre} ${item.cliente_apellido_paterno} ${item.cliente_apellido_materno}`}</p>
+                  <p className="font-normal">{`${item.nombre} ${item.apellido_paterno} ${item.apellido_materno}`}</p>
                 </div>
                 <div className="text-sm">
                   <p>Telefono:</p>
-                  <p className="font-normal">{item.cliente_telefono}</p>
+                  <p className="font-normal">{item.telefono}</p>
                 </div>
                 <button
                   className="bg-gray-700 text-sm text-white p-2 rounded-lg hover:bg-black transform duration-200 m-auto"
@@ -74,7 +74,7 @@ const Costumers = ({ clientes, seleccionarCliente }) => {
             ))}
             {clientesFiltrados.length == 0 && (
               <p className="col-span-4 text-center text-gray-500">
-                No se encontraron resultados o ya tiene membresia activa {":)"}
+                No se encontraron resultados
               </p>
             )}
           </div>
@@ -87,13 +87,13 @@ const Costumers = ({ clientes, seleccionarCliente }) => {
 Costumers.propTypes = {
   clientes: PropTypes.arrayOf(
     PropTypes.shape({
-      cliente_id: PropTypes.number.isRequired,
-      cliente_nombre: PropTypes.string.isRequired,
-      cliente_apellido_paterno: PropTypes.string,
-      cliente_apellido_materno: PropTypes.string,
-      cliente_telefono: PropTypes.string.isRequired,
-      cliente_email: PropTypes.string.isRequired,
-      cliente_img_secure_url: PropTypes.string,
+      id: PropTypes.number.isRequired,
+      nombre: PropTypes.string.isRequired,
+      apellido_paterno: PropTypes.string,
+      apellido_materno: PropTypes.string,
+      telefono: PropTypes.string.isRequired,
+      email: PropTypes.string.isRequired,
+      secure_url: PropTypes.string,
     })
   ),
   seleccionarCliente: PropTypes.func,

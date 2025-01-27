@@ -2,7 +2,8 @@ import pool from "../config/db.js";
 
 const obtenerTodas = async (req, res) => {
   try {
-    const querySelect = "SELECT * FROM membresias WHERE eliminado = false";
+    const querySelect =
+      "SELECT * FROM membresias WHERE eliminado = false ORDER BY id DESC";
     const { rows: membresias } = await pool.query(querySelect);
     const membresiasConvertidas = membresias.map((membresia) => ({
       ...membresia,
@@ -70,23 +71,23 @@ const actualizar = async (req, res) => {
     const queryUpdate = `
     UPDATE membresias
     SET 
-      nombre = $1, 
-      beneficios = $2, 
-      duracion_dias = $3, 
-      precio = $4,
-      disponible = $5
+      nombre = COALESCE($1, nombre), 
+      beneficios = COALESCE($2, beneficios),
+      duracion_dias = COALESCE($3, duracion_dias), 
+      precio = COALESCE($4, precio),
+      disponible = COALESCE($5, disponible)
     WHERE id = $6
   `;
     //Actualiza el registroe en la base de datos
     await pool.query(queryUpdate, [
-      nombre !== undefined ? nombre : membresia[0].nombre,
-      beneficios !== undefined ? beneficios : membresia[0].beneficios,
-      duracion_dias !== undefined ? duracion_dias : membresia[0].duracion_dias,
-      precio !== undefined ? precio : membresia[0].precio,
-      disponible !== undefined ? disponible : membresia[0].disponible,
+      nombre,
+      beneficios,
+      +duracion_dias,
+      +precio,
+      disponible,
       id,
     ]);
-    res.json({ msg: "Datos de membresia modificados correctamente" });
+    res.json({ msg: "Dato modificado correctamente" });
   } catch (error) {
     console.log(error);
     res
@@ -115,7 +116,7 @@ const actualizarDisponible = async (req, res) => {
       disponible !== undefined ? disponible : membresia[0].disponible,
       id,
     ]);
-    res.json({ msg: "Dato de membresia modificado correctamente" });
+    res.json({ msg: "Estado de disponibilidad cambiado correctamente" });
   } catch (error) {
     console.log(error);
     res
@@ -180,7 +181,7 @@ const obtenerMembresiaPorId = async (req, res) => {
 
 const obtenerMembresiasClientes = async (req, res) => {
   try {
-    const querySelect = `SELECT * FROM vista_compras_membresias`;
+    const querySelect = `SELECT * FROM vista_membresias_clientes`;
     const { rows: membresiasClientes } = await pool.query(querySelect);
     return res.status(200).json(membresiasClientes);
   } catch (error) {

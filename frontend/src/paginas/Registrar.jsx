@@ -13,22 +13,35 @@ const Registrar = () => {
   const [password2, setPassword2] = useState("");
   const [alerta, setAlerta] = useState({ msg: "", error: false });
 
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if ([nombre, apellidoPaterno, apellidoMaterno, telefono, email, password, password2].includes("")) {
-      setAlerta({ msg: "Hay campos vacios", error: true });
+    if (
+      [
+        nombre,
+        apellidoPaterno,
+        apellidoMaterno,
+        telefono,
+        email,
+        password,
+        password2,
+      ].includes("")
+    ) {
+      mostrarAlerta("Hay campos vacios", true);
       return;
     }
     if (password.length < 6) {
-      setAlerta({
-        msg: "El password es muy corto, minimo escribe 6 valores",
-        error: true,
-      });
+      mostrarAlerta("El password es muy corto, minimo escribe 6 valores", true);
       return;
     }
-
     if (password !== password2) {
-      setAlerta({ msg: "Los password no son iguales", error: true });
+      mostrarAlerta("Los password no son iguales", true);
       return;
     }
 
@@ -44,15 +57,9 @@ const Registrar = () => {
         telefono,
         password,
       });
-      setAlerta({
-        msg: "Creado correctamente, revisa email para confirmar",
-        error: false,
-      });
+      mostrarAlerta("Creado correctamente, revisa email para confirmar", false);
     } catch (error) {
-      setAlerta({
-        msg: error.response.data.msg,
-        error: true,
-      });
+      mostrarAlerta(error.response.data.msg, true);
     }
   };
 
@@ -68,22 +75,22 @@ const Registrar = () => {
       </div>
       <div className="contenedor-auth">
         {/* Imagen para móviles */}
-        <img 
-          className="img-auth-mobile" 
-          src="/assets/login.png" 
-          alt="logo-inicio-movil" 
-				/>
+        <img
+          className="img-auth-mobile"
+          src="/assets/login.png"
+          alt="logo-inicio-movil"
+        />
         <h1 className="text-3xl m-2 font-bold">Registrarse</h1>
-        
+
         <form
           autoComplete="off"
-          className=" font-medium  flex flex-col gap-3 "
+          className="relative font-medium  flex flex-col gap-3 "
           onSubmit={handleSubmit}
         >
           {
-          // SI en msg hay algo, entonces muestra alerta
-          msg && <Alerta alerta={alerta} />
-        }
+            // SI en msg hay algo, entonces muestra alerta
+            msg && <Alerta alerta={alerta} />
+          }
           <p className="text-gray-500 text-center">
             Ingresa tu datos para crear el perfil de administración
           </p>
@@ -166,7 +173,7 @@ const Registrar = () => {
             Crear cuenta
           </button>
         </form>
-        <nav className="lg:flex lg:justify-center text-center" >
+        <nav className="lg:flex lg:justify-center text-center">
           <p className="m-2 text-gray-600">
             ¿Quieres iniciar sesión?{" "}
             <span className="font-semibold text-gray-800">

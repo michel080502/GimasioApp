@@ -4,6 +4,6 @@ import { comprarMembresia, comprarProductos, renovarMembresia } from "../control
 const router = express.Router();
 
 router.post("/membresia",comprarMembresia);
-router.post("/renovarMembresia",renovarMembresia);
+router.post("/renovar-membresia",renovarMembresia);
 router.post("/productos",comprarProductos);
 export default router;

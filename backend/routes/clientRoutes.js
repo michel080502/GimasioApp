@@ -4,9 +4,9 @@ import {
   crear,
   deleteById,
   getAll,
+  obtenerClientesNoActivos,
   getById,
   update,
-  obtenerClientesNoActivos
 } from "../controllers/clientController.js";
 
 const router = express.Router();

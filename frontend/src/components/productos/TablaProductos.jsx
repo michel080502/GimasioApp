@@ -9,6 +9,7 @@ import ConfirmDialogDelete from "../ui/confirmDialogDelete";
 import ToggleSwitch from "../ui/ToggleSwitch";
 import clienteAxios from "../../config/axios";
 import { exportDataToExcel } from "../../utils/exportDataToExcel";
+import Alerta from "../Alerta";
 
 const TablaProductos = ({
   productos,
@@ -17,13 +18,21 @@ const TablaProductos = ({
   dataType,
   formatoPrecio,
   actualizarDisponibleProductos,
-  actualizarProductos,
+  dataDeletedProducto,
 }) => {
   const [optionsExport, setOptionsExport] = useState(null);
   const [filterOptions, setFilterOptions] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [deleteProducto, setDeleteProducto] = useState(null);
+  const [alerta, setAlerta] = useState({ msg: "", error: false });
+
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
 
   // Activacion de botones exportacion y filtro
   const toggleOptionsExport = () => {
@@ -46,7 +55,7 @@ const TablaProductos = ({
     "Disponible",
     "Precio inicial",
     "Descuento",
-    "Precio final"
+    "Precio final",
   ];
 
   const generateExcelData = (productos) => {
@@ -64,11 +73,21 @@ const TablaProductos = ({
   };
 
   const handleDownload = async () => {
-    exportDataToExcel(generateExcelData(productos), headers, "reportes_clientes", "download")
+    exportDataToExcel(
+      generateExcelData(filterProducts()),
+      headers,
+      `reporte_productos_${dataType || categoriaFiltro}`,
+      "download"
+    );
   };
 
   const handleSendReport = async () => {
-    exportDataToExcel(generateExcelData(productos), headers, "reportes_clientes", "send")
+    exportDataToExcel(
+      generateExcelData(productos),
+      headers,
+      `reporte_productos_${categoriaFiltro}`,
+      "send"
+    );
   };
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -108,9 +127,9 @@ const TablaProductos = ({
       );
       // Actualizar el estado localmente sin recargar
       actualizarDisponibleProductos(id, newValue);
-      console.log(data);
+      mostrarAlerta(data.msg, false);
     } catch (error) {
-      console.error(error);
+      mostrarAlerta(error.response.data.msg, true);
     }
   };
 
@@ -122,10 +141,11 @@ const TablaProductos = ({
   const handleDelete = async (id) => {
     try {
       const { data } = await clienteAxios.delete(`/producto/delete/${id}`);
-      actualizarProductos(id);
-      console.log(data);
+      dataDeletedProducto(id);
+      mostrarAlerta(data.msg, false);
+      deleteProducto(null);
     } catch (error) {
-      console.error(error);
+      mostrarAlerta(error.response.data.msg, true);
     }
   };
 
@@ -134,6 +154,7 @@ const TablaProductos = ({
     filterProducts();
   }, [categoriaFiltro, searchTerm, dataType]);
 
+  const { msg } = alerta;
   return (
     <>
       <div className="my-3 p-2 bg-white rounded-lg">
@@ -233,7 +254,8 @@ const TablaProductos = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className=" relative overflow-x-auto">
+          {msg && <Alerta alerta={alerta} />}
           <table className="min-w-full border border-gray-200 divide-y divide-gray-300">
             <thead className="bg-gray-100 text-sm">
               <tr className="text-center">
@@ -374,7 +396,7 @@ TablaProductos.propTypes = {
   dataType: PropTypes.string,
   formatoPrecio: PropTypes.instanceOf(Intl.NumberFormat),
   actualizarDisponibleProductos: PropTypes.func,
-  actualizarProductos: PropTypes.func,
+  dataDeletedProducto: PropTypes.func,
 };
 
 export default TablaProductos;

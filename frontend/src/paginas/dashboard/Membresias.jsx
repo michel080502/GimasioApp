@@ -13,8 +13,11 @@ import clienteAxios from "../../config/axios";
 
 const Membresias = () => {
   const [membresias, setMembresias] = useState([]);
+  const [selectedMembership, setSelectedMembership] = useState(null);
+  const [purchaseMembership, setPurchaseMembership] = useState([]);
   const [activeModal, setActiveModal] = useState(null);
   const [tablaDatos, setTablaDatos] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const formatoPrecio = new Intl.NumberFormat("es-MX", {
     style: "currency",
@@ -23,12 +26,23 @@ const Membresias = () => {
     maximumFractionDigits: 2,
   });
 
-  const openModal = (modalName) => {
-    setActiveModal(modalName);
+  const openModal = (modalName, membership = null) => {
+    setActiveModal(modalName), setSelectedMembership(membership);
   };
   const typeTable = (type) =>
     setTablaDatos((prev) => (prev === type ? "" : type));
 
+  const dataUpdate = (membresia) => {
+    setMembresias((prev) =>
+      prev.map((item) =>
+        item.id === membresia.id ? { ...item, ...membresia } : item
+      )
+    );
+  };
+
+  const dataDeleted = (id) => {
+    setMembresias((prev) => prev.filter((membresia) => membresia.id !== id));
+  };
   const closeModal = () => setActiveModal(null);
 
   useEffect(() => {
@@ -39,10 +53,23 @@ const Membresias = () => {
       } catch (error) {
         console.error("Error al obtener membresias", error);
         setMembresias([]);
-      } 
+      }
     };
+
+    const getPurchaseMembership = async () => {
+      try {
+        const { data } = await clienteAxios.get("/membresia/clientes");
+        setPurchaseMembership(data);
+      } catch (error) {
+        console.error("Error al obtener membresias", error);
+        setPurchaseMembership([]);
+      }
+    };
+    getPurchaseMembership();
     getMembresias();
+    setLoading(false);
   }, []);
+  if (loading) return <h1>Cargando.....</h1>;
   return (
     <div className="p-5">
       <div className="p-4 flex justify-between items-center">
@@ -59,7 +86,11 @@ const Membresias = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4 ">
-        <CardInforme typeTable={typeTable} />
+        <CardInforme
+          typeTable={typeTable}
+          membresias={membresias}
+          purchaseMembership={purchaseMembership}
+        />
       </div>
       {/* Tablas informes */}
       {tablaDatos === "" && (
@@ -67,10 +98,14 @@ const Membresias = () => {
           openModal={openModal}
           membresias={membresias}
           formatoPrecio={formatoPrecio}
+          dataDeleted={dataDeleted}
         />
       )}
       {tablaDatos !== "" && (
-        <TablaCompras tipo={tablaDatos} openModal={openModal} />
+        <TablaCompras
+          tipo={tablaDatos}
+          purchaseMembership={purchaseMembership}
+        />
       )}
 
       {/* Modal de agregar productos */}
@@ -95,7 +130,10 @@ const Membresias = () => {
             </button>
           </div>
 
-          <FormUpdate />
+          <FormUpdate
+            selectedMembership={selectedMembership}
+            dataUpdate={dataUpdate}
+          />
         </Modal>
       )}
     </div>
