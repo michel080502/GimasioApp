@@ -75,7 +75,7 @@ const update = async (req, res) => {
     matricula,
   } = req.body;
 
-  const queryFind = "SELECT * FROM clientes WHERE id = $1";
+  const queryFind = "SELECT * FROM clientes WHERE id = $1 && eliminado = false";
   try {
     const { rows: cliente } = await pool.query(queryFind, [id]);
     if (cliente.length === 0) {
@@ -93,6 +93,7 @@ const update = async (req, res) => {
 			nacimiento = $6, 
 			matricula = $7
 		WHERE id = $8
+    && eliminado = false
 	`;
 
     await pool.query(queryUpdate, [
@@ -115,7 +116,7 @@ const update = async (req, res) => {
 
 const getAll = async (req, res) => {
   try {
-    const selectQuery = "SELECT * FROM clientes ORDER BY id DESC;";
+    const selectQuery = "SELECT * FROM clientes WHERE eliminado = false ORDER BY id DESC;";
     const { rows: clientes } = await pool.query(selectQuery);
     // Convertir la fecha de nacimiento a solo fecha en formato YYYY-MM-DD
     const clientesFormateados = clientes.map((cliente) => ({
@@ -131,7 +132,7 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   const { id } = req.params;
-  const query = "SELECT * FROM clientes WHERE id = $1";
+  const query = "SELECT * FROM clientes WHERE id = $1 AND eliminado = false";
   if (!id || isNaN(id) || parseInt(id) <= 0) {
     return res.status(400).json({ error: "El id proporcionado no es válido." });
   }
@@ -155,7 +156,7 @@ const getById = async (req, res) => {
 const deleteById = async (req, res) => {
   const { id } = req.params;
 
-  const deleteQuery = "DELETE FROM clientes WHERE id = $1 RETURNING *";
+  const deleteQuery = "UPDATE clientes SET eliminado = true WHERE id = $1 RETURNING *";
 
   try {
     const { rows: deletedClient } = await pool.query(deleteQuery, [id]);
@@ -163,7 +164,6 @@ const deleteById = async (req, res) => {
       const error = new Error("Cliente no encontrado");
       return res.status(400).json({ msg: error.message });
     }
-    await deleteImage(deletedClient[0].img_public_id);
     return res.json({ msg: "Cliente eliminado correctamente" });
   } catch (error) {
     console.log(error);
