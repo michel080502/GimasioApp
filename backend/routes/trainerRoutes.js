@@ -1,5 +1,5 @@
 import express from "express";
-
+import fileUpload from "express-fileupload";
 import {
   creatTrainer,
   deleteTrainer,
@@ -7,7 +7,6 @@ import {
   updateActive,
   updatedTrainer,
 } from "../controllers/trainerController.js";
-import fileUpload from "express-fileupload";
 
 const router = express.Router();
 

@@ -8,7 +8,7 @@ const Clients = ({ clientes, seleccionarCliente }) => {
 
   // FIltrar clientes segun el termino de busqueda
   const clientesFiltrados = clientes.filter((cliente) =>
-    [cliente.nombre, cliente.telefono].some((campo) =>
+    [cliente.cliente_nombre, cliente.cliente_telefono].some((campo) =>
       campo.toLowerCase().includes(busqueda.toLowerCase())
     )
   );
@@ -38,7 +38,7 @@ const Clients = ({ clientes, seleccionarCliente }) => {
           <div className="grid grid-cols-4 gap-2 max-h-80 min-h-80 overflow-y-auto">
             {clientesFiltrados.map((item, index) => (
               <article
-                key={item.id}
+                key={index}
                 className="border rounded-lg hover:border-gray-700 p-3 grid gap-2"
               >
                 <div className="flex justify-between">
@@ -46,40 +46,40 @@ const Clients = ({ clientes, seleccionarCliente }) => {
                   <p
                     className={`text-sm 
                     ${
-                      item.estado_membresia === "activa"
+                      item.estado === "Activa"
                         ? "text-green-700"
-                        : item.estado_membresia === "vencida"
+                        : item.estado === "Vencida"
                         ? "text-red-700"
-                        : item.estado_membresia === "7 días"
+                        : item.estado === "Por vencer"
                         ? "text-yellow-600"
                         : "text-orange-600"
                     }`}
                   >
-                    {item.estado_membresia}
+                    {item.estado}
                   </p>
                 </div>
 
                 <img
                   className={`w-24 h-24 p m-auto rounded-lg shadow-md ring 
                     ${
-                      item.estado_membresia === "activa"
+                      item.estado_membresia === "Activa"
                         ? "ring-green-700 shadow-green-700"
-                        : item.estado_membresia === "vencida"
+                        : item.estado_membresia === "Vencida"
                         ? "ring-red-700 shadow-red-700"
-                        : item.estado_membresia === "7 días"
+                        : item.estado_membresia === "Por vencer"
                         ? "ring-yellow-600 shadow-yellow-600"
                         : "ring-orange-600 shadow-orange-600"
                     }`}
-                  src="https://preview.redd.it/ryomen-sukuna-the-disgraced-one-killer-concept-if-you-have-v0-wejlwgmte6vd1.jpg?width=1080&crop=smart&auto=webp&s=0c808230a5770e41e5af48bfdcfc33437e215da3"
+                  src={item.cliente_img_secure_url}
                   alt={item.nombre}
                 />
                 <div className="text-sm ">
                   <p className="text-gray-600">Nombre:</p>
-                  <p className="font-normal">{item.nombre}</p>
+                  <p className="font-normal">{`${item.cliente_nombre} ${item.cliente_apellido_paterno} ${item.cliente_apellido_paterno}`}</p>
                 </div>
                 <div className="text-sm">
                   <p className="text-gray-600">Telefono:</p>
-                  <p className="font-normal">{item.telefono}</p>
+                  <p className="font-normal">{item.cliente_telefono}</p>
                 </div>
                 <button
                   className="text-xs bg-gray-700 text-white px-2 py-1 rounded-md hover:bg-black transform duration-300 m-auto"
@@ -106,11 +106,13 @@ const Clients = ({ clientes, seleccionarCliente }) => {
 Clients.propTypes = {
   clientes: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      nombre: PropTypes.string.isRequired,
-      img_secure_url: PropTypes.string,
-      estado_membresia: PropTypes.string.isRequired,
-      telefono: PropTypes.string.isRequired,
+      cliente_id: PropTypes.number.isRequired,
+      cliente_nombre: PropTypes.string.isRequired,
+      cliente_apellido_paterno: PropTypes.string,
+      cliente_apellido_materno: PropTypes.string,
+      cliente_img_secure_url: PropTypes.string,
+      estado: PropTypes.string.isRequired,
+      cliente_telefono: PropTypes.string.isRequired,
     })
   ),
   seleccionarCliente: PropTypes.func,

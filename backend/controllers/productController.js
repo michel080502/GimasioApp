@@ -33,14 +33,15 @@ const crear = async (req, res, next) => {
       });
     }
     let img = {};
-    if (req.files?.img) {
-      const resultImg = await uploadImage(req.files.img.tempFilePath);
-      img = {
-        public_id: resultImg.public_id,
-        secure_url: resultImg.secure_url,
-      };
-      await fs.unlink(req.files.img.tempFilePath);
+    if (!req.files?.img) {
+      return res.status(400).json({ error: "La imagen es obligatoria." });
     }
+    const resultImg = await uploadImage(req.files.img.tempFilePath);
+    img = {
+      public_id: resultImg.public_id,
+      secure_url: resultImg.secure_url,
+    };
+    await fs.unlink(req.files.img.tempFilePath);
     const insertQuery = `
     INSERT INTO productos (nombre, marca, categoria_id, stock, precio, descuento, total, img_public_id, img_secure_url) 
    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
@@ -148,7 +149,10 @@ const crearCategoria = async (req, res) => {
       return res.status(409).json({
         msg: error.message,
       });
-    } else if (categoriaExiste.length > 0 && categoriaExiste[0].eliminado === false) {
+    } else if (
+      categoriaExiste.length > 0 &&
+      categoriaExiste[0].eliminado === true
+    ) {
       const queryUpdateActive = `UPDATE categorias_productos 
       SET 
       eliminado = $1

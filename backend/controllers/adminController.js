@@ -285,6 +285,96 @@ const actualizar = async (req, res) => {
   }
 };
 
+const actualizarInfoGym = async (req, res) => {
+  const {
+    nombre_gimnasio,
+    horario_apertura,
+    horario_cierre,
+    precio_visita,
+    email_envio_reportes,
+    direccion,
+    telefono,
+  } = req.body;
+
+  // Consulta en la base de datos si ya está generada la instancia del gym
+  const query = "SELECT * FROM configuracion_gym";
+  try {
+    const { rows: config } = await pool.query(query);
+    if (config.length === 0) {
+      // Si no está generada la instancia, se crea una nueva
+      const insertQuery = `
+        INSERT INTO configuracion_gym (nombre_gimnasio, horario_apertura, horario_cierre, precio_visita, email_envio_reportes, direccion, telefono)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `;
+      const result = await pool.query(insertQuery, [
+        nombre_gimnasio,
+        horario_apertura,
+        horario_cierre,
+        precio_visita,
+        email_envio_reportes,
+        direccion,
+        telefono,
+      ]);
+      if (result.rowCount > 0) {
+        return res.json({ msg: "Configuración del gimnasio realizada" });
+      } else {
+        return res
+          .status(500)
+          .json({ msg: "No se pudo realizar la configuración del gimnasio" });
+      }
+    } else {
+      // Si ya está generada la instancia, se actualizan los datos
+      const updateQuery = `
+        UPDATE configuracion_gym
+        SET 
+          nombre_gimnasio = $1,
+          horario_apertura = $2,
+          horario_cierre = $3,
+          precio_visita = $4,
+          email_envio_reportes = $5,
+          direccion = $6,
+          telefono = $7
+        WHERE id = $8
+      `;
+      const result = await pool.query(updateQuery, [
+        nombre_gimnasio,
+        horario_apertura,
+        horario_cierre,
+        precio_visita,
+        email_envio_reportes,
+        direccion,
+        telefono,
+        config[0].id,
+      ]);
+      if (result.rowCount > 0) {
+        return res.json({ msg: "Configuración del gimnasio actualizada" });
+      } else {
+        return res
+          .status(500)
+          .json({ msg: "No se pudo actualizar la configuración del gimnasio" });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+};
+
+const obtenerInfoGym = async (req, res) => {
+  const query =
+    "SELECT nombre_gimnasio, horario_apertura, horario_cierre, precio_visita, email_envio_reportes, direccion, telefono FROM configuracion_gym";
+  try {
+    const { rows: config } = await pool.query(query);
+    if (config.length === 0) {
+      const error = new Error("No se ha configurado el gimnasio");
+      return res.status(404).json({ error: error.message });
+    }
+    res.json(config[0]);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+};
 export {
   registrar,
   perfil,
@@ -294,4 +384,6 @@ export {
   comprobarToken,
   nuevoPassword,
   actualizar,
+  actualizarInfoGym,
+  obtenerInfoGym,
 };

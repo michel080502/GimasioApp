@@ -26,15 +26,13 @@ const crear = async (req, res) => {
         .status(400)
         .json({ msg: "Todos los campos son obligatorios." });
     }
-
     //Filtra las membresias creadas anteriormente y valida si ya existe una con el nombre ingresado
-    const filterquery = "SELECT * FROM membresias WHERE nombre = $1";
+    const filterquery = "SELECT * FROM membresias WHERE nombre = $1 AND eliminado = false";
     const { rows: membresiaExiste } = await pool.query(filterquery, [nombre]);
     if (membresiaExiste.length > 0) {
-      const error = new Error("Ya existe membresia con ese nombre");
+      const error = new Error("Ya existe una membresia con ese nombre");
       return res.status(409).json({ msg: error.message });
-    }
-
+    } 
     //Inserta la membresia a la base de datos
     const insertQuery = `
         INSERT INTO membresias (nombre, beneficios, duracion_dias, precio)
@@ -46,11 +44,12 @@ const crear = async (req, res) => {
       duracion,
       precio,
     ]);
+    
     // Emitir el nueva Membresia usando Socket.IO
     // req.io.emit("nueva-Membresia", nuevaMembresia[0]);
 
     res.status(201).json({
-      msg: `Membresia ${nuevaMembresia[0].nombre} creada exitosamente`,
+      msg: `Membresia ${nombre} creada exitosamente`,
     });
   } catch (error) {
     console.error(error);

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Costumers from "./Costumers";
 import Products from "./Products";
 import clienteAxios from "../../../config/axios";
+import Alerta from "../../Alerta";
 
 const PointSellProducts = () => {
   const [externalName, setExternalName] = useState("");
@@ -11,17 +12,26 @@ const PointSellProducts = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [infoCliente, setInfoCliente] = useState(null);
   const [productsSelect, setProductsSelect] = useState([]);
   const [saleMade, setSaleMade] = useState(null);
+  const [alerta, setAlerta] = useState({ msg: "", error: false });
   // const [infoSale, setInfoSale] = useState(null);
-  const [totalVenta, setTotalVenta] = useState(0); // Variable para el total de la venta
+  const [total, setTotal] = useState(0); // Variable para el total de la venta
   // Calcular el total de la venta cada vez que productsSelect cambia
+
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
   useEffect(() => {
     const nuevoTotalVenta = productsSelect.reduce(
       (acc, product) => acc + product.subtotal,
       0
     );
-    setTotalVenta(nuevoTotalVenta);
+    setTotal(nuevoTotalVenta);
   }, [productsSelect]); // calcula las ventas cada que el estado del productoSelect cambia
 
   useEffect(() => {
@@ -50,6 +60,7 @@ const PointSellProducts = () => {
 
   const seleccionarCliente = (cliente) => {
     setClienteSeleccionado(cliente.id);
+    setInfoCliente(cliente);
   };
 
   const handleNameExternal = (e) => {
@@ -113,26 +124,17 @@ const PointSellProducts = () => {
       precioUnitario: product.total,
       subtotal: product.subtotal,
     }));
-    if (productsSelect.length > 0 && clienteSeleccionado) {
-      console.log("Venta realizada con los siguientes datos:");
-      console.log("Cliente:", clienteSeleccionado);
-      console.log("Productos:", productosInfo);
-      console.log("Total", totalVenta);
-      setSaleMade(1);
-      // setProductsSelect([]); // Limpiar productos seleccionados
-      // setClienteSeleccionado(null); // Limpiar cliente seleccionado
+
+    try {
+      const { data } = await clienteAxios.post("/compra/productos/", {
+        cliente: clienteSeleccionado,
+        productos: productosInfo,
+        total,
+      });
+      setSaleMade(data.venta);
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
     }
-    return;
-    // try {
-    //   const { data } = clienteAxios.post("/compra/producto/", {
-    //     cliente: clienteSeleccionado,
-    //     productos: productosInfo,
-    //     totalVenta
-    //   });
-    //   console.log(data);
-    // } catch (error) {
-    //   console.log(error);
-    // }
   };
   const activarVenta = clienteSeleccionado && productsSelect.length > 0;
 
@@ -142,12 +144,14 @@ const PointSellProducts = () => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  const { msg } = alerta;
 
   if (loading) return "cargando...";
   if (!saleMade) {
     return (
       <div className="grid grid-cols-8 divide-x-2">
-        <main className="col-span-5  pr-3">
+        <main className="col-span-5  pr-3 relative">
+          {msg && <Alerta alerta={alerta} />}
           {!clienteSeleccionado ? (
             <Costumers
               clientes={clientes}
@@ -219,7 +223,7 @@ const PointSellProducts = () => {
                       <p className="text-base font-medium">Nombre:</p>
 
                       <p className="text-base font-normal">
-                        {clienteSeleccionado.nombre}
+                        {infoCliente.nombre}
                       </p>
                     </div>
 
@@ -227,14 +231,14 @@ const PointSellProducts = () => {
                       <p className="text-base font-medium">Telefono:</p>
 
                       <p className="text-base font-normal">
-                        {clienteSeleccionado.telefono}
+                        {infoCliente.telefono}
                       </p>
                     </div>
                     <div className="flex justify-between">
                       <p className="text-base font-medium">Email:</p>
 
                       <p className="text-base font-normal">
-                        {clienteSeleccionado.email}
+                        {infoCliente.email}
                       </p>
                     </div>
                   </>
@@ -360,7 +364,7 @@ const PointSellProducts = () => {
                         Total
                       </td>
                       <td className="px-3 py-3 text-sm text-gray-900">
-                        {formatoPrecio.format(totalVenta)}
+                        {formatoPrecio.format(total)}
                       </td>
                     </tr>
                   </tfoot>
@@ -385,23 +389,7 @@ const PointSellProducts = () => {
   } else {
     return (
       <div className="grid gap-2 p-2">
-        <h2>¡¡Compra realizada correctamente!!</h2>
-        <p className="text-sm font-normal">
-          Informa al cliente el resultado de su compra y presiona en la X para
-          salir
-        </p>
-        <div className="flex items-center justify-between ">
-          <p className="text-lg">Cliente:</p>
-          <p className="text-base font-normal">Aqui mostaremos los datos</p>
-        </div>
-        <div className="flex items-center justify-between ">
-          <p className="text-lg">Fecha compra:</p>
-          <p className="text-base font-normal">que obtenemos de una </p>
-        </div>
-        <div className="flex items-center justify-between ">
-          <p className="text-lg">Total de la compra:</p>
-          <p className="text-base font-normal">consulta correcta</p>
-        </div>
+        <h2 className="text-green-700">¡¡Compra realizada correctamente!!</h2>
       </div>
     );
   }

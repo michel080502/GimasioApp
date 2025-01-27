@@ -114,7 +114,6 @@ CREATE TABLE ventas (
     )
 );
 
-
 -- Tabla de detalles de ventas
 CREATE TABLE detalles_ventas (
     id SERIAL PRIMARY KEY,
@@ -123,8 +122,8 @@ CREATE TABLE detalles_ventas (
     cantidad INT NOT NULL,
     precio_unitario NUMERIC(10, 2) NOT NULL,
     subtotal NUMERIC(10, 2) NOT NULL,
-    CONSTRAINT fk_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE NULL,
-    CONSTRAINT fk_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE NULL
+    CONSTRAINT fk_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE SET NULL,
+    CONSTRAINT fk_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE SET NULL
 );
 
 -- Tabla de entrenadores
@@ -156,7 +155,6 @@ CREATE TABLE configuracion_gym (
     horario_apertura TIME NOT NULL,
     horario_cierre TIME NOT NULL,
     precio_visita NUMERIC(10, 2) NOT NULL,
-    reportes_hora_generacion TIME NOT NULL,
     email_envio_reportes VARCHAR(255) NOT NULL,
     direccion VARCHAR(255),
     telefono VARCHAR(15),

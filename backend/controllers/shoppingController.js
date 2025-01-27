@@ -130,4 +130,114 @@ const renovarMembresia = async (req, res) => {
   }
 };
 
-export { comprarMembresia, renovarMembresia };
+
+const comprarProductos = async (req, res) => {
+  const { cliente, productos, total } = req.body;
+
+  // Validación básica de productos y total
+  if (!productos || !Array.isArray(productos) || productos.length === 0) {
+    return res
+      .status(400)
+      .json({ msg: "Debe proporcionar al menos un producto válido." });
+  }
+  if (!total || isNaN(total)) {
+    return res
+      .status(400)
+      .json({ msg: "El total es obligatorio y debe ser un número válido." });
+  }
+
+  // Validar que cliente tenga un ID o datos de cliente externo
+  if (!cliente) {
+    return res.status(400).json({
+      msg: "Debe proporcionar la informacion del cliente.",
+    });
+  }
+
+  try {
+    // Verificar si el cliente es externo o registrado
+    const esClienteExterno = isNaN(cliente) && typeof cliente === "string";
+    //Validar si el cliente existe en la base
+    if (!esClienteExterno) {
+      const checkCliente = `SELECT * FROM clientes WHERE id = $1 AND eliminado = false;`;
+      const { rows: clienteRegistrado } = await pool.query(checkCliente, [
+        cliente,
+      ]);
+      if (clienteRegistrado.length === 0) {
+        return res
+          .status(404)
+          .json({ msg: "El cliente no existe o ha sido eliminado." });
+      }
+    }
+    // Query para insertar la venta dependiendo si es cliente externo o registrado
+    const ventaInsert = esClienteExterno
+      ? `INSERT INTO ventas (cliente_externo, fecha_venta, total) VALUES ($1, $2, $3) RETURNING *;`
+      : `INSERT INTO ventas (cliente_id, fecha_venta, total) VALUES ($1, $2, $3) RETURNING *;`;
+
+    // Verificar stock para cada producto
+    for (const producto of productos) {
+      const { id, cantidad } = producto;
+      // Validación básica de cada producto
+      if (!id || !cantidad || isNaN(cantidad) || cantidad <= 0) {
+        return res.status(400).json({
+          msg: "Cada producto debe tener un ID válido y una cantidad mayor a 0.",
+        });
+      }
+      // Consultar el stock del producto
+      const queryStock = `SELECT * FROM productos WHERE id = $1;`;
+      const { rows } = await pool.query(queryStock, [id]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({
+          msg: `El producto con ID ${id} no existe.`,
+        });
+      }
+
+      const stockDisponible = rows[0].stock;
+      // Validar si hay suficiente stock
+      if (stockDisponible < cantidad) {
+        return res.status(400).json({
+          msg: `No hay suficiente stock para el producto '${rows[0].nombre}' Disponible: ${stockDisponible}, Requerido: ${cantidad}.`,
+        });
+      }
+    }
+
+    // Realizar la venta
+    const { rows: venta } = await pool.query(ventaInsert, [
+      cliente,
+      new Date(),
+      total,
+    ]);
+    //Insertas los productos de la venta en la tabla detalle_ventas y actualiza el stock de los productos
+    for (const producto of productos) {
+      const { id, cantidad } = producto;
+      const queryUpdateStock = `UPDATE productos SET stock = stock - $1 WHERE id = $2 RETURNING *;`;
+      const { rows: productoActualizado } = await pool.query(queryUpdateStock, [
+        cantidad,
+        id,
+      ]);
+      const queryInsertDetalle = `INSERT INTO detalles_ventas (venta_id, producto_id, cantidad, precio_unitario, subtotal) VALUES ($1, $2, $3, $4, $5);`;
+      await pool.query(queryInsertDetalle, [
+        venta[0].id,
+        id,
+        cantidad,
+        productoActualizado[0].precio,
+        productoActualizado[0].precio * cantidad,
+      ]);
+    }
+    //Confirmar el total de la venta
+    const queryUpdateTotal = `UPDATE ventas SET total = (SELECT SUM(subtotal) FROM detalles_ventas WHERE venta_id = $1) WHERE id = $1;`;
+    await pool.query(queryUpdateTotal, [venta[0].id]);
+
+    //Devuelve la respuesta con la venta realizada
+    return res
+      .status(201)
+      .json({ msg: "Venta realizada con éxito", venta: venta[0] });
+  } catch (error) {
+    console.log(error);
+    console.error("Error al realizar la venta:", error.message);
+    return res.status(500).json({ msg: "Hubo un error al procesar la venta." });
+  }
+};
+
+
+export { comprarMembresia, renovarMembresia, comprarProductos };
