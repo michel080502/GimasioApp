@@ -13,14 +13,31 @@ const crear = async (req, res, next) => {
     matricula,
   } = req.body;
 
-  const query = "SELECT * FROM clientes WHERE matricula = $1 OR email = $2";
   try {
-    const { rows: clienteExiste } = await pool.query(query, [matricula, email]);
-    if (clienteExiste.length > 0) {
-      const mensajeError = clienteExiste.some((c) => c.matricula === matricula)
-        ? "La matrícula ya está registrada."
-        : "El correo electrónico ya está registrado.";
+    //Validarque los campos no estén vacíos
+    if ( !nombre || !apellidoPaterno || !apellidoMaterno || !telefono || !nacimiento || !email || !matricula) {
+      return res.status(400).json({ msg: "Todos los campos son obligatorios." });
+    }
+    //Validar que el correo electrónico y el teléfono no estén registrados en la base de datos en un cliente activo
+    const queryClienteActivo = "SELECT * FROM clientes WHERE (email = $1 OR telefono = $2)  AND eliminado = false";
+    const { rows: clienteExisteActivo } = await pool.query(queryClienteActivo, [email, telefono]);
+    if (clienteExisteActivo.length > 0) {
+      const mensajeError = clienteExisteActivo.some((c) => c.email === email)
+        ? "El correo electrónico ya está registrado."
+        : "El teléfono ya está registrado.";
       return res.status(400).json({ msg: mensajeError });
+    }
+    //Validar que el correo electrónico, el teléfono y la matrícula no estén registrados en la base de datos en un cliente inactivo
+    const queryClienteInactivo = "SELECT * FROM clientes WHERE email = $1 AND telefono = $2 AND matricula = $3  AND eliminado = true";
+    const { rows: clienteExisteInactivo } = await pool.query(queryClienteInactivo, [email, telefono, matricula]);
+    if (clienteExisteInactivo.length > 0) {
+      // Reactivar el cliente inactivo
+      const queryUpdateCliente = "UPDATE clientes SET eliminado = false WHERE id = $1 RETURNING *";
+      const { rows: clienteReactivado } = await pool.query(queryUpdateCliente, [clienteExisteInactivo[0].id]); 
+      return res.json({
+        msg: "Cliente reactivado exitosamente",
+        cliente: clienteReactivado[0],
+      });
     }
 
     let img = {};
