@@ -124,7 +124,7 @@ const renovarMembresia = async (req, res) => {
   }
 };
 
-const comprarProductos = async (req, res) => {
+const comprarProductos = async (req, res) => { 
   const { cliente, productos, total } = req.body;
 
   // Validación básica de productos y total
