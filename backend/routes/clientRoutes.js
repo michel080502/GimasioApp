@@ -7,6 +7,7 @@ import {
   obtenerClientesNoActivos,
   getById,
   update,
+  registrarAsistencia,
 } from "../controllers/clientController.js";
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.post(
   fileUpload({ useTempFiles: true, tempFileDir: "./uploads" }),
   crear
 );
+router.post("/asistencia",registrarAsistencia);  
 router.put("/update/:id", update);
 router.delete("/delete/:id", deleteById);
 
