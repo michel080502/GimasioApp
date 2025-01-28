@@ -52,7 +52,7 @@ const comprarMembresia = async (req, res) => {
 };
 
 const cancelarCompraMembresia = async (req, res) => {
-  const { id_compra } = req.body;
+  const { id_compra } = req.params;
   try {
     //Valida si el campo id_compra fue enviado en la solicitud
     if (!id_compra || isNaN(id_compra)) {
@@ -284,7 +284,7 @@ const comprarProductos = async (req, res) => {
 };
 
 const cancelarCompraProductos = async (req, res) => {
-  const { id_venta } = req.body;
+  const { id_venta } = req.params;
   //Valida si el campo id_venta fue enviado en la solicitud
   if (!id_venta || isNaN(id_venta)) {
     return res.status(400).json({

@@ -8,6 +8,6 @@ router.get("/ventas-membresias",obtenerVentasMembresias);
 router.post("/membresia",comprarMembresia);
 router.post("/renovar-membresia",renovarMembresia);
 router.post("/productos",comprarProductos);
-router.delete("/membresia",cancelarCompraMembresia);
-router.delete("/productos",cancelarCompraProductos);
+router.delete("/membresia/:id_compra",cancelarCompraMembresia);
+router.delete("/producto/:id_venta",cancelarCompraProductos);
 export default router;

@@ -15,12 +15,27 @@ const crear = async (req, res, next) => {
 
   try {
     //Validarque los campos no estén vacíos
-    if ( !nombre || !apellidoPaterno || !apellidoMaterno || !telefono || !nacimiento || !email || !matricula) {
-      return res.status(400).json({ msg: "Todos los campos son obligatorios." });
+    if (
+      !nombre ||
+      !apellidoPaterno ||
+      !apellidoMaterno ||
+      !telefono ||
+      !nacimiento ||
+      !email ||
+      !matricula
+    ) {
+      return res
+        .status(400)
+        .json({ msg: "Todos los campos son obligatorios." });
     }
     //Validar que el correo electrónico y el teléfono no estén registrados en la base de datos en un cliente activo
-    const queryClienteActivo = "SELECT * FROM clientes WHERE (email = $1 OR telefono = $2)  AND eliminado = false";
-    const { rows: clienteExisteActivo } = await pool.query(queryClienteActivo, [email, telefono]);
+    const queryClienteActivo =
+      "SELECT * FROM clientes WHERE (email = $1 OR telefono = $2)  AND eliminado = $3";
+    const { rows: clienteExisteActivo } = await pool.query(queryClienteActivo, [
+      email,
+      telefono,
+      false,
+    ]);
     if (clienteExisteActivo.length > 0) {
       const mensajeError = clienteExisteActivo.some((c) => c.email === email)
         ? "El correo electrónico ya está registrado."
@@ -28,12 +43,20 @@ const crear = async (req, res, next) => {
       return res.status(400).json({ msg: mensajeError });
     }
     //Validar que el correo electrónico, el teléfono y la matrícula no estén registrados en la base de datos en un cliente inactivo
-    const queryClienteInactivo = "SELECT * FROM clientes WHERE email = $1 AND telefono = $2 AND matricula = $3  AND eliminado = true";
-    const { rows: clienteExisteInactivo } = await pool.query(queryClienteInactivo, [email, telefono, matricula]);
+    const queryClienteInactivo =
+      "SELECT * FROM clientes WHERE email = $1 AND telefono = $2 AND matricula = $3  AND eliminado = $4";
+    const { rows: clienteExisteInactivo } = await pool.query(
+      queryClienteInactivo,
+      [email, telefono, matricula, true]
+    );
     if (clienteExisteInactivo.length > 0) {
       // Reactivar el cliente inactivo
-      const queryUpdateCliente = "UPDATE clientes SET eliminado = false WHERE id = $1 RETURNING *";
-      const { rows: clienteReactivado } = await pool.query(queryUpdateCliente, [clienteExisteInactivo[0].id]); 
+      const queryUpdateCliente =
+        "UPDATE clientes SET eliminado = $1 WHERE id = $2 RETURNING *";
+      const { rows: clienteReactivado } = await pool.query(queryUpdateCliente, [
+        false,
+        clienteExisteInactivo[0].id,
+      ]);
       return res.json({
         msg: "Cliente reactivado exitosamente",
         cliente: clienteReactivado[0],
@@ -92,28 +115,36 @@ const update = async (req, res) => {
     matricula,
   } = req.body;
 
-  const queryFind = "SELECT * FROM clientes WHERE id = $1 && eliminado = false";
-  try {
-    const { rows: cliente } = await pool.query(queryFind, [id]);
-    if (cliente.length === 0) {
-      const error = new Error("Cliente no encontrado");
-      return res.status(404).json({ msg: error.message });
-    }
-    const queryUpdate = `
-		UPDATE clientes
-		SET 
-			nombre = $1, 
-			apellido_paterno = $2, 
-			apellido_materno = $3, 
-			telefono = $4, 
-			email = $5, 
-			nacimiento = $6, 
-			matricula = $7
-		WHERE id = $8
-    && eliminado = false
-	`;
+  // Consulta para verificar si el cliente existe
+  const queryFind = "SELECT * FROM clientes WHERE id = $1 AND eliminado = $2";
 
-    await pool.query(queryUpdate, [
+  try {
+    const { rows: cliente } = await pool.query(queryFind, [id, false]);
+    if (cliente.length === 0) {
+      return res.status(404).json({ msg: "Cliente no encontrado" });
+    }
+
+    // Validar datos antes de la actualización (opcional según tus necesidades)
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ msg: "Correo electrónico no válido" });
+    }
+
+    // Consulta para actualizar el cliente
+    const queryUpdate = `
+      UPDATE clientes
+      SET 
+        nombre = $1, 
+        apellido_paterno = $2, 
+        apellido_materno = $3, 
+        telefono = $4, 
+        email = $5, 
+        nacimiento = $6, 
+        matricula = $7
+      WHERE id = $8 AND eliminado = $9
+      RETURNING *
+    `;
+
+    const { rows: clienteActualizado } = await pool.query(queryUpdate, [
       nombre || cliente[0].nombre,
       apellidoPaterno || cliente[0].apellido_paterno,
       apellidoMaterno || cliente[0].apellido_materno,
@@ -122,18 +153,23 @@ const update = async (req, res) => {
       nacimiento || cliente[0].nacimiento,
       matricula || cliente[0].matricula,
       id,
+      false,
     ]);
 
-    res.json({ msg: "Cliente modificado correctamente" });
+    res.json({
+      msg: "Cliente modificado correctamente",
+      cliente: clienteActualizado[0],
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ msg: "Hubo error al ingresar el cliente" });
+    console.error(error);
+    res.status(500).json({ msg: "Hubo un error al modificar el cliente" });
   }
 };
 
 const getAll = async (req, res) => {
   try {
-    const selectQuery = "SELECT * FROM clientes WHERE eliminado = false ORDER BY id DESC;";
+    const selectQuery =
+      "SELECT * FROM clientes WHERE eliminado = false ORDER BY id DESC;";
     const { rows: clientes } = await pool.query(selectQuery);
     // Convertir la fecha de nacimiento a solo fecha en formato YYYY-MM-DD
     const clientesFormateados = clientes.map((cliente) => ({
@@ -173,7 +209,8 @@ const getById = async (req, res) => {
 const deleteById = async (req, res) => {
   const { id } = req.params;
 
-  const deleteQuery = "UPDATE clientes SET eliminado = true WHERE id = $1 RETURNING *";
+  const deleteQuery =
+    "UPDATE clientes SET eliminado = true WHERE id = $1 RETURNING *";
 
   try {
     const { rows: deletedClient } = await pool.query(deleteQuery, [id]);

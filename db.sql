@@ -99,14 +99,13 @@ ALTER COLUMN fecha_expiracion TYPE TIMESTAMP WITH TIME ZONE USING fecha_expiraci
 ALTER COLUMN fecha_renovacion TYPE TIMESTAMP WITH TIME ZONE USING fecha_renovacion AT TIME ZONE 'UTC';
 
 
--- Tabla de ventas
 CREATE TABLE ventas (
     id SERIAL PRIMARY KEY,
     cliente_id INT NULL, -- Puede ser NULL para clientes no registrados
     cliente_externo VARCHAR(255) NULL, -- Nombre del cliente externo
     fecha_venta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     total NUMERIC(10, 2) NOT NULL,
-    CONSTRAINT fk_cliente_venta FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE SET NULL,
+    CONSTRAINT fk_cliente_venta FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE CASCADE, -- Elimina ventas cuando se elimina un cliente
     CONSTRAINT chk_cliente CHECK (
         -- Valida que solo uno de los dos campos tenga valor
         (cliente_id IS NOT NULL AND cliente_externo IS NULL) OR
@@ -114,7 +113,7 @@ CREATE TABLE ventas (
     )
 );
 
--- Tabla de detalles de ventas
+
 CREATE TABLE detalles_ventas (
     id SERIAL PRIMARY KEY,
     venta_id INT NOT NULL,
@@ -122,9 +121,10 @@ CREATE TABLE detalles_ventas (
     cantidad INT NOT NULL,
     precio_unitario NUMERIC(10, 2) NOT NULL,
     subtotal NUMERIC(10, 2) NOT NULL,
-    CONSTRAINT fk_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE SET NULL,
-    CONSTRAINT fk_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE SET NULL
+    CONSTRAINT fk_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE CASCADE, -- Elimina detalles de ventas cuando se elimina una venta
+    CONSTRAINT fk_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE CASCADE -- Elimina detalles de ventas cuando se elimina un producto
 );
+
 
 -- Tabla de entrenadores
 CREATE TABLE entrenadores (
@@ -173,6 +173,7 @@ SELECT
     c.nombre AS cliente_nombre,
     c.apellido_paterno AS cliente_apellido_paterno,
     c.apellido_materno AS cliente_apellido_materno,
+    c.matricula AS cliente_matricula,
     c.telefono AS cliente_telefono,
     c.email AS cliente_email,
     c.img_secure_url AS cliente_img_secure_url,
@@ -196,7 +197,7 @@ SELECT
 FROM ranked_compras cm
 JOIN clientes c ON cm.cliente_id = c.id
 JOIN membresias m ON cm.membresia_id = m.id
-WHERE cm.rn = 1;
+WHERE cm.rn = 1 AND c.eliminado = FALSE;
 
 
 
@@ -208,6 +209,7 @@ SELECT cm.id AS compra_id,
     c.apellido_paterno AS cliente_apellido_paterno,
     c.apellido_materno AS cliente_apellido_materno,
     c.telefono AS cliente_telefono,
+    c.matricula AS cliente_matricula,
     c.email AS cliente_email,
     c.img_secure_url AS cliente_img_secure_url,
     m.id AS membresia_id,
@@ -243,7 +245,7 @@ SELECT c.id AS cliente_id,
     c.img_secure_url AS cliente_img_secure_url
    FROM clientes c
      LEFT JOIN compras_membresias cm ON c.id = cm.cliente_id AND cm.fecha_expiracion >= now()
-  WHERE cm.id IS NULL;
+  WHERE cm.id IS NULL AND c.eliminado = FALSE;
 
 
 -- Crear vista para el inventario de productos con nombre de categoría y nivel de stock
@@ -300,3 +302,21 @@ SELECT cm.id AS compra_id,
    FROM compras_membresias cm
      JOIN clientes c ON cm.cliente_id = c.id
      JOIN membresias m ON cm.membresia_id = m.id;
+
+
+CREATE OR REPLACE VIEW vista_ventas_productos AS
+SELECT v.id AS venta_id,
+v.fecha_venta,
+v.total,
+    CASE
+        WHEN v.cliente_id IS NOT NULL THEN json_build_object('nombre', c.nombre, 'apellido_paterno', c.apellido_paterno, 'apellido_materno', c.apellido_materno, 'email', c.email, 'telefono', c.telefono)
+        WHEN v.cliente_externo IS NOT NULL THEN json_build_object('nombre', v.cliente_externo)
+        ELSE NULL::json
+    END AS cliente,
+json_agg(json_build_object('nombre_producto', p.nombre, 'marca', p.marca, 'cantidad', dv.cantidad, 'precio_unitario', dv.precio_unitario, 'subtotal', dv.subtotal, 'img', p.img_secure_url, 'categoria', cat.nombre)) AS detalles_productos
+FROM detalles_ventas dv
+    JOIN ventas v ON dv.venta_id = v.id
+    LEFT JOIN clientes c ON v.cliente_id = c.id
+    LEFT JOIN productos p ON dv.producto_id = p.id
+    LEFT JOIN categorias_productos cat ON p.categoria_id = cat.id
+GROUP BY v.id, v.fecha_venta, v.total, v.cliente_id, v.cliente_externo, c.id;

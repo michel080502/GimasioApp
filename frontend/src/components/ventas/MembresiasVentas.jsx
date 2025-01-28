@@ -47,7 +47,7 @@ const MembresiasVentas = () => {
     setOptionsExport(null);
   };
   const handleMembresiaFiltro = (filtro) => {
-    setMembresiaFiltro((prev) => (prev === filtro ? "" : filtro));
+    setMembresiaFiltro((prev) => (prev === filtro ? 0 : filtro));
   };
 
   const handleSearch = (e) => {
@@ -59,8 +59,9 @@ const MembresiasVentas = () => {
     return purchaseMembership
       .filter((item) => {
         // Filtro por membresiaFiltro
-        if (membresiaFiltro && membresiaFiltro.length > 0) {
-          return membresiaFiltro.includes(item.membresia_nombre);
+        if (membresiaFiltro && membresiaFiltro > 0) {
+          const mesCompra = new Date(item.fecha_compra).getMonth() + 1;
+          return mesCompra === membresiaFiltro;
         }
         return true; // No hay filtro de membresía, incluir todos
       })
@@ -69,6 +70,8 @@ const MembresiasVentas = () => {
           item.cliente_nombre.toLowerCase(),
           item.cliente_apellido_paterno.toLowerCase(),
           item.cliente_apellido_materno.toLowerCase(),
+          item.cliente_telefono,
+          item.membresia_nombre.toLowerCase(),
         ].some((campo) => campo.includes(lowerSearchTerm))
       );
   };
@@ -129,16 +132,30 @@ const MembresiasVentas = () => {
     setDeleteVenta(null); // Cancelar la eliminación
   };
 
-  const confirmDelete = () => {
-    // Aquí puedes agregar la lógica para eliminar el cliente
-    console.log(`Venta con id ${deleteVenta} eliminado.`);
-    setDeleteVenta(null); // Reiniciar el estado
+  const dataDeleted = (id) => {
+    setPurchaseMembership((prev) =>
+      prev.filter((sale) => sale.compra_id !== id)
+    );
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const { data } = await clienteAxios.delete(
+        `/compra/membresia/${deleteVenta}`
+      );
+      dataDeleted(deleteVenta);
+      mostrarAlerta(data.msg, false);
+      setDeleteVenta(null);
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
+    }
+    // Reiniciar el estado
   };
 
   useEffect(() => {
     const getPurchase = async () => {
       try {
-        const { data } = await clienteAxios.get("/membresia/clientes");
+        const { data } = await clienteAxios.get("/compra/ventas-membresias");
         setPurchaseMembership(data);
       } catch (error) {
         console.log(error);
@@ -175,7 +192,7 @@ const MembresiasVentas = () => {
                   type="text"
                   value={searchTerm || ""}
                   onChange={handleSearch}
-                  placeholder="Buscar tipo membresia..."
+                  placeholder="Buscar cliente (nombre, telefono) o tipo membresia..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
                 />
                 <button
@@ -211,22 +228,38 @@ const MembresiasVentas = () => {
                 Filtro
               </button>
               {filterOptions && (
-                <div className="absolute  mt-40 -mr-24  border bg-gray-200  rounded shadow-lg w-48 z-10 flex flex-col divide-y divide-gray-400 text-base">
+                <div className="absolute mt-16 -mr-24 border bg-gray-200 rounded shadow-lg w-48 z-10 flex flex-col divide-y divide-gray-400 text-base">
                   {[
-                    ...new Set( // Creamos un conjunto unico de nombres SET() o sea que no muestrta duplicados y luego se convierte a arreglo con ...new
-                      purchaseMembership.map((item) => item.membresia_nombre)
-                    ),
-                  ].map((nombre, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleMembresiaFiltro(nombre)}
-                      className={`p-2 hover:bg-gray-300 ${
-                        membresiaFiltro === nombre ? "bg-gray-300" : ""
-                      } text-left`}
-                    >
-                      {nombre}
-                    </button>
-                  ))}
+                    ...purchaseMembership
+                      .map((item) => {
+                        const fecha = new Date(item.fecha_compra);
+                        return {
+                          nombre: fecha.toLocaleString("es", { month: "long" }),
+                          numero: fecha.getMonth() + 1,
+                        };
+                      })
+                      .reduce((acc, current) => {
+                        const exists = acc.find(
+                          (item) =>
+                            item.numero === current.numero &&
+                            item.nombre === current.nombre
+                        );
+                        if (!exists) acc.push(current);
+                        return acc;
+                      }, []),
+                  ]
+                    .sort((a, b) => a.numero - b.numero)
+                    .map(({ nombre, numero }, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleMembresiaFiltro(numero)}
+                        className={`p-2 hover:bg-gray-300 ${
+                          membresiaFiltro === numero ? "bg-gray-300" : ""
+                        } text-left capitalize`}
+                      >
+                        {nombre}
+                      </button>
+                    ))}
                 </div>
               )}
             </div>
@@ -300,7 +333,7 @@ const MembresiasVentas = () => {
                       <td className="px-6 py-4 text-sm text-gray-700">
                         ${venta.membresia_precio}
                       </td>
-                      <td className="px-6 flex gap-3 py-4 text-sm text-gray-700">
+                      <td className="px-6 flex justify-center gap-3 py-4 text-sm text-gray-700">
                         <button
                           className="text-cyan-500 hover:text-cyan-700 transition-colors duration-300"
                           onClick={() => openModalVenta(venta)}
@@ -313,12 +346,16 @@ const MembresiasVentas = () => {
                             purchaseSelected={purchaseSelected}
                           />
                         )}
-                        <button
-                          className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
-                          onClick={() => toggleDelete(venta.compra_id)}
-                        >
-                          <MdDelete className="text-3xl scale-hover" />
-                        </button>
+                        {new Date(venta.fecha_compra).toDateString() ===
+                          new Date().toDateString() && (
+                          <button
+                            className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
+                            onClick={() => toggleDelete(venta.compra_id)}
+                          >
+                            <MdDelete className="text-3xl scale-hover" />
+                          </button>
+                        )}
+
                         {/* Muestra recuadro de confirmacion */}
                         {deleteVenta === venta.compra_id && (
                           <div className="absolute  mt-2 bg-white border rounded-lg shadow-lg w-56 z-10 p-2 right-10">

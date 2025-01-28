@@ -2,22 +2,36 @@ import { MdDelete } from "react-icons/md";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import { HiSearchCircle } from "react-icons/hi";
 import { BsEyeFill } from "react-icons/bs";
+import { FaFilter } from "react-icons/fa";
 
 import MenuExport from "../ui/MenuExport";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale"; // Importamos el idioma español
 import InformeVentaProducto from "./InformeVentaProducto";
+import clienteAxios from "../../config/axios";
+import Alerta from "../Alerta";
 
 const ProductosVentas = () => {
+  const [salesProduct, setSalesProduct] = useState([]);
   const [optionsExport, setOptionsExport] = useState(null);
+  const [filterOptions, setFilterOptions] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [deleteVenta, setDeleteVenta] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
+  const [alerta, setAlerta] = useState({ msg: "", error: false });
 
+  const mostrarAlerta = (msg, error) => {
+    setAlerta({ msg, error });
+    setTimeout(() => {
+      setAlerta({ msg: "", error: false });
+    }, 4000);
+  };
   const openModalVenta = (id) => {
     setActiveModal(id);
-  }
+  };
   const closeModal = () => setActiveModal(null);
   const toggleOptionsExport = () => {
     setOptionsExport((prev) => !prev);
@@ -28,6 +42,53 @@ const ProductosVentas = () => {
   const handleSendReport = async () => {
     console.log("Enviando.....");
   };
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const toggleFilterOptions = () => {
+    setFilterOptions((prev) => !prev);
+    setOptionsExport(null);
+  };
+  const handleMembresiaFiltro = (filtro) => {
+    setDateFilter((prev) => (prev === filtro ? 0 : filtro));
+  };
+
+  const filtroData = () => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+
+    return salesProduct.filter((item) => {
+      // Filtro por fecha
+      if (dateFilter && dateFilter > 0) {
+        const mesCompra = new Date(item.fecha_venta).getMonth() + 1;
+        if (mesCompra !== dateFilter) return false;
+      }
+
+      // Filtro por búsqueda de texto
+      const campos = [
+        item.cliente.nombre.toLowerCase(),
+        item.cliente.apellido_paterno
+          ? item.cliente.apellido_paterno.toLowerCase()
+          : "",
+        item.cliente.apellido_materno
+          ? item.cliente.apellido_materno.toLowerCase()
+          : "",
+        item.cliente.telefono || "",
+      ];
+
+      // Filtro para el array de detalles_productos
+      const detallesFiltro = item.detalles_productos
+        .map((detalle) => detalle.nombre_producto.toLowerCase()) // Extraemos los nombres de productos en minúsculas
+        .join(" "); // Unimos los nombres de productos en una cadena de texto, separados por espacio
+
+      // Verificamos si algún campo contiene el término de búsqueda
+      return (
+        campos.some((campo) => campo.includes(lowerSearchTerm)) ||
+        detallesFiltro.includes(lowerSearchTerm)
+      );
+    });
+  };
+
   const toggleDelete = (id) => {
     setDeleteVenta(id);
   };
@@ -35,63 +96,36 @@ const ProductosVentas = () => {
     setDeleteVenta(null); // Cancelar la eliminación
   };
 
-  const confirmDelete = () => {
-    // Aquí puedes agregar la lógica para eliminar el cliente
-    console.log(`Venta con id ${deleteVenta} eliminado.`);
-    setDeleteVenta(null); // Reiniciar el estado
+  const dataDeleted = (id) => {
+    setSalesProduct((prev) => prev.filter((sale) => sale.venta_id !== id));
   };
-  const datosSimulados = [
-    {
-      id: 1,
-      fotoCliente: "https://via.placeholder.com/40", // Imagen de perfil simulada
-      nombreCliente: "Juan Pérez",
-      telefono: "555-123-4567",
-      precio: 200.0,
-      productos: ["Mancuernas", "Proteína en polvo"],
-      fechaCompra: "2024-12-15",
-      total: 400.0,
-    },
-    {
-      id: 2,
-      fotoCliente: "https://via.placeholder.com/40",
-      nombreCliente: "Ana López",
-      telefono: "555-765-4321",
-      precio: 150.0,
-      productos: ["Colchoneta", "Banda elástica"],
-      fechaCompra: "2024-12-18",
-      total: 300.0,
-    },
-    {
-      id: 3,
-      fotoCliente: "https://via.placeholder.com/40",
-      nombreCliente: "Carlos Ruiz",
-      telefono: "555-987-6543",
-      precio: 100.0,
-      productos: ["Cuerda para saltar", "Pesas tobilleras"],
-      fechaCompra: "2024-12-20",
-      total: 200.0,
-    },
-    {
-      id: 4,
-      fotoCliente: "https://via.placeholder.com/40",
-      nombreCliente: "Sofía Martínez",
-      telefono: "555-321-0987",
-      precio: 300.0,
-      productos: ["Bicicleta estática", "Toalla deportiva"],
-      fechaCompra: "2024-12-21",
-      total: 600.0,
-    },
-    {
-      id: 5,
-      fotoCliente: "https://via.placeholder.com/40",
-      nombreCliente: "Miguel Torres",
-      telefono: "555-654-3210",
-      precio: 250.0,
-      productos: ["Proteína vegetal", "Termo"],
-      fechaCompra: "2024-12-22",
-      total: 500.0,
-    },
-  ];
+
+  const confirmDelete = async () => {
+    try {
+      const { data } = await clienteAxios.delete(
+        `/compra/producto/${deleteVenta}`
+      );
+      dataDeleted(deleteVenta);
+      mostrarAlerta(data.msg, false);
+      setDeleteVenta(null); // Reiniciar el estado
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
+    }
+  };
+
+  useEffect(() => {
+    const getSales = async () => {
+      try {
+        const { data } = await clienteAxios.get("/compra/ventas-productos");
+        setSalesProduct(data);
+      } catch (error) {
+        console.log(error);
+        setSalesProduct([]);
+      }
+    };
+    getSales();
+  }, []);
+  const { msg } = alerta;
   return (
     <>
       <main>
@@ -101,7 +135,7 @@ const ProductosVentas = () => {
             <div className=" grid grid-cols-3 items-center md:flex  justify-between">
               <div className="col-span-2 gap-2 ">
                 <h1 className="font-bold text-xl">Total de ventas</h1>
-                <p>300</p>
+                <p>{salesProduct.length}</p>
               </div>
 
               <div className="flex md:hidden w-full md:w-0 items-center">
@@ -115,7 +149,9 @@ const ProductosVentas = () => {
               <form className="flex">
                 <input
                   type="text"
-                  placeholder="Buscar tipo membresia..."
+                  placeholder="Buscar con (nombre cliente, producto )..."
+                  value={searchTerm || ""}
+                  onChange={handleSearch}
                   className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
                 />
                 <button
@@ -141,23 +177,62 @@ const ProductosVentas = () => {
                   onSendReport={handleSendReport}
                 />
               )}
+
+              <button
+                type="button"
+                onClick={toggleFilterOptions}
+                className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
+              >
+                <FaFilter />
+                Filtro
+              </button>
+              {filterOptions && (
+                <div className="absolute mt-16 -mr-24 border bg-gray-200 rounded shadow-lg w-48 z-10 flex flex-col divide-y divide-gray-400 text-base">
+                  {[
+                    ...salesProduct
+                      .map((item) => {
+                        const fecha = new Date(item.fecha_venta);
+                        return {
+                          nombre: fecha.toLocaleString("es", { month: "long" }),
+                          numero: fecha.getMonth() + 1,
+                        };
+                      })
+                      .reduce((acc, current) => {
+                        const exists = acc.find(
+                          (item) =>
+                            item.numero === current.numero &&
+                            item.nombre === current.nombre
+                        );
+                        if (!exists) acc.push(current);
+                        return acc;
+                      }, []),
+                  ]
+                    .sort((a, b) => a.numero - b.numero)
+                    .map(({ nombre, numero }, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleMembresiaFiltro(numero)}
+                        className={`p-2 hover:bg-gray-300 ${
+                          dateFilter === numero ? "bg-gray-300" : ""
+                        } text-left capitalize`}
+                      >
+                        {nombre}
+                      </button>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
+            {msg && <Alerta alerta={alerta} />}
             <table className="min-w-full border border-gray-200 divide-y divide-gray-300 ">
               <thead className="bg-gray-100 text-xs ">
                 <tr className="text-center">
                   <th className="px-5 py-2 text-gray-700 uppercase">#</th>
-                  <th className="px-5 py-2 text-gray-700 uppercase">
-                    Foto cliente
-                  </th>
+
                   <th className="px-5 py-2 text-gray-700 uppercase">
                     Nombre cliente
                   </th>
-                  <th className="px-5 py-2 text-gray-700 uppercase">
-                    Número de telefono
-                  </th>
-                  <th className="px-5 py-2 text-gray-700 uppercase">Precio</th>
 
                   <th className="px-5 py-2 text-gray-700 uppercase">
                     Productos
@@ -173,66 +248,67 @@ const ProductosVentas = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200 font-medium text-center items-center">
-                {datosSimulados.map((venta, index) => (
-                  <tr key={venta.id} className="hover:bg-gray-100">
+                {filtroData().map((venta, index) => (
+                  <tr key={index} className="hover:bg-gray-100">
+                    <td className=" text-sm text-gray-700">{index + 1}</td>
+
                     <td className="px-6 py-4 text-sm text-gray-700">
-                      {index + 1}
+                      {`${venta.cliente.nombre} ${
+                        venta.cliente.apellido_paterno || ""
+                      } ${venta.cliente.apellido_materno || ""}`}
                     </td>
+
                     <td className="px-6 py-4 text-sm text-gray-700">
-                      <img
-                        src={venta.fotoCliente}
-                        alt="Foto cliente"
-                        className="w-10 h-10 rounded-full ring-2 ring-red-800 m-auto"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {venta.nombreCliente}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {venta.telefono}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      ${venta.precio.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      <ul className="list-disc">
-                        {venta.productos.map((producto, i) => (
-                          <li key={i}>{producto}</li>
+                      <ul className="">
+                        {venta.detalles_productos.map((producto, i) => (
+                          <li key={i}>{producto.nombre_producto}</li>
                         ))}
                       </ul>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">
-                    {format(
-                        new Date(venta.fechaCompra),
+                      {format(
+                        new Date(venta.fecha_venta),
                         "dd 'de' MMMM, yyyy",
                         { locale: es }
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">
-                      ${venta.total.toFixed(2)}
+                      ${venta.total}
                     </td>
-                    <td className="px-6 flex gap-3 py-4 text-sm text-gray-700">
-                    <button
-                        className="text-cyan-500 hover:text-cyan-700 transition-colors duration-300"
-                        onClick={() => openModalVenta(venta.id)}
-                      >
-                        <BsEyeFill  className="text-3xl scale-hover" />
-                      </button>
-                      {activeModal === venta.id && (
-                        <InformeVentaProducto closeModal={closeModal} />
-                      )}
-                      <button
-                        className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
-                        onClick={() => toggleDelete(venta.id)}
-                      >
-                        <MdDelete className="text-3xl scale-hover" />
-                      </button>
+                    <td className="px-6  gap-3 py-4 text-sm text-gray-700">
+                      <div className="m-auto flex ites-center justify-center gap-3">
+                        <button
+                          className="text-cyan-500 hover:text-cyan-700 transition-colors duration-300"
+                          onClick={() => openModalVenta(venta.venta_id)}
+                        >
+                          <BsEyeFill className="text-3xl scale-hover" />
+                        </button>
+                        {activeModal === venta.venta_id && (
+                          <InformeVentaProducto
+                            closeModal={closeModal}
+                            venta={venta}
+                          />
+                        )}
+                        {new Date(venta.fecha_venta).toDateString() ===
+                          new Date().toDateString() && (
+                          <button
+                            className="text-rose-400 hover:text-rose-700 transition-colors duration-300"
+                            onClick={() => toggleDelete(venta.venta_id)}
+                          >
+                            <MdDelete className="text-3xl scale-hover" />
+                          </button>
+                        )}
+                      </div>
+
                       {/* Muestra recuadro de confirmacion */}
-                      {deleteVenta === venta.id && (
+                      {deleteVenta === venta.venta_id && (
                         <div className="absolute  mt-2 bg-white border rounded-lg shadow-lg w-56 z-10 p-4   right-10">
                           <h1 className="text-lg font-semibold text-gray-700 mb-2">
                             ¿Seguro que deseas eliminar la venta de <br />
-                            <span className="font-bold">{venta.nombreCliente}</span>?
+                            <span className="font-bold">
+                              {venta.cliente.nombre}
+                            </span>
+                            ?
                           </h1>
                           <div className="flex justify-between">
                             <button
