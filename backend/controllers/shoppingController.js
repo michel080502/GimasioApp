@@ -51,6 +51,48 @@ const comprarMembresia = async (req, res) => {
   }
 };
 
+const cancelarCompraMembresia = async (req, res) => {
+  const { id_compra } = req.body;
+  try {
+    //Valida si el campo id_compra fue enviado en la solicitud
+    if (!id_compra || isNaN(id_compra)) {
+      return res.status(400).json({
+        msg: "El campo id_compra es obligatorio y debe ser numerico",
+      });
+    }
+    //Valida si la compra existe en la base de datos y es candidata para ser cancelada
+    const queryFindCompra = `SELECT * FROM compras_membresias WHERE id = $1 AND fecha_renovacion IS NULL`;
+    const { rows: compra } = await pool.query(queryFindCompra, [id_compra]);
+    if (compra.length === 0) {
+      const error = new Error(
+        "Compra no encontrada en la base de datos o no valida para ser cancelada"
+      );
+      return res.status(404).json({ msg: error.message });
+    }
+    //Se obtiene el id del cliente de la compra
+    const id_cliente = compra[0].cliente_id;
+    //Se cancela la compra de la membresia
+    const queryCancel = `DELETE FROM compras_membresias WHERE id = $1`;
+    await pool.query(queryCancel, [id_compra]);
+
+    //Se actualiza la fecha de renovacion de la ultima compra de membresia del cliente
+    const queryUpdate = `UPDATE compras_membresias
+        SET fecha_renovacion = NULL
+        WHERE id = (
+          SELECT id 
+          FROM compras_membresias
+          WHERE cliente_id = $1 AND fecha_renovacion IS NOT NULL
+          ORDER BY fecha_compra DESC
+          LIMIT 1
+        )`;
+    await pool.query(queryUpdate, [id_cliente]);
+    res.status(200).json({ msg: "Compra cancelada exitosamente" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+};
+
 const renovarMembresia = async (req, res) => {
   const { id_cliente, id_membresia } = req.body;
   //Valida si los campos id_cliente e id_membresia fueron enviados en la solicitud
@@ -80,12 +122,15 @@ const renovarMembresia = async (req, res) => {
     }
 
     //Valida si se la membresia esta vencida para hacer la renovacion de la misma o si se vence ese mismo dia
-    if (ultimaCompra[0].estado == "activa" && ultimaCompra[0].fecha_expiracion > new Date()) {
+    if (
+      ultimaCompra[0].estado == "activa" &&
+      ultimaCompra[0].fecha_expiracion > new Date()
+    ) {
       return res.status(404).json({
         msg: "La membresia del cliente aun esta activa, no es necesario renovarla",
       });
     }
-    
+
     //Valida si la membresia existe en la base de datos mediante su ID y este disponible para su compra
     const queryFindMemb = `SELECT * FROM membresias WHERE disponible = true AND id = $1`;
     const { rows: membresia } = await pool.query(queryFindMemb, [id_membresia]);
@@ -130,7 +175,7 @@ const renovarMembresia = async (req, res) => {
   }
 };
 
-const comprarProductos = async (req, res) => { 
+const comprarProductos = async (req, res) => {
   const { cliente, productos, total } = req.body;
 
   // Validación básica de productos y total
@@ -238,5 +283,60 @@ const comprarProductos = async (req, res) => {
   }
 };
 
+const cancelarCompraProductos = async (req, res) => {
+  const { id_venta } = req.body;
+  //Valida si el campo id_venta fue enviado en la solicitud
+  if (!id_venta || isNaN(id_venta)) {
+    return res.status(400).json({
+      msg: "El campo id_venta es obligatorio y debe ser numerico",
+    });
+  }
+  //Valida si la venta existe en la base de datos
+  const queryFindVenta = `SELECT * FROM ventas WHERE id = $1;`;
+  const { rows: venta } = await pool.query(queryFindVenta, [id_venta]);
+  if (venta.length === 0) {
+    return res.status(404).json({
+      msg: "Venta no encontrada en la base de datos",
+    });
+  }
+  //Borramos la venta de la base de datos y se borran los productos de la venta de la tabla detalle_ventas de manera automatica
+  const queryCancel = `DELETE FROM ventas WHERE id = $1;`;
+  await pool.query(queryCancel, [id_venta]);
+  return res.status(200).json({ msg: "Venta cancelada exitosamente" });
+};
 
-export { comprarMembresia, renovarMembresia, comprarProductos };
+const obtenerVentasProductos = async (req, res) => {
+  try {
+    const querySelect = "SELECT * FROM vista_ventas_productos";
+    const { rows: ventasProductos } = await pool.query(querySelect);
+    return res.status(200).json(ventasProductos);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      msg: "Hubo error al obtener las ventas de productos",
+    });
+  }
+};
+
+const obtenerVentasMembresias = async (req, res) => {
+  try {
+    const querySelect = "SELECT * FROM vista_compras_membresias";
+    const { rows: ventasMembresias } = await pool.query(querySelect);
+    return res.status(200).json(ventasMembresias);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      msg: "Hubo error al obtener las ventas de membresias",
+    });
+  }
+};
+
+export {
+  comprarMembresia,
+  renovarMembresia,
+  comprarProductos,
+  cancelarCompraMembresia,
+  cancelarCompraProductos,
+  obtenerVentasProductos,
+  obtenerVentasMembresias,
+};
