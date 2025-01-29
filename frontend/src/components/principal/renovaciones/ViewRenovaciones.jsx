@@ -1,29 +1,35 @@
-import { HiSearchCircle } from "react-icons/hi";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import { BsBootstrapReboot } from "react-icons/bs";
 
 import { useState } from "react";
-import MenuExport from "../../ui/MenuExport";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import ModalRenovacion from "../../membresias/ModalRenovacion";
+import PropTypes from "prop-types";
+import Modal from "../../Modal";
 
-
-const ViewRenovaciones = () => {
+const ViewRenovaciones = ({ membershipsClient }) => {
+  const [renewalClient, setRenewalClient] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
-  const [optionsExport, setOptionsExport] = useState(null);
 
-  const toggleOptionsExport = () => {
-    setOptionsExport((prev) => !prev);
+  const dataFilter = () => {
+    // Verificar que membershipsClient sea un arreglo
+    if (!Array.isArray(membershipsClient)) {
+      return [];
+    }
+
+    // Filtrar los datos con el estado 'Vence hoy'
+    const resultado = membershipsClient.filter(
+      (membership) => membership.estado === "Vence hoy"
+    );
+
+    // Retornar el resultado (vacío si no hay coincidencias)
+    return resultado;
   };
 
-  const handleDownload = async () => {
-    console.log("Descargando.....");
-  };
-  const handleSendReport = async () => {
-    console.log("Enviando.....");
-  };
-
-  const openModal = (id) => {
-    setActiveModal(id); // Almacena el ID del elemento seleccionado
+  const openModal = (item) => {
+    setRenewalClient(item);
+    setActiveModal(item.compra_id);
   };
 
   const closeModal = () => setActiveModal(null);
@@ -34,13 +40,13 @@ const ViewRenovaciones = () => {
         Hoy dejan de tener acceso los siguientes clientes, pidele que renueve
       </p>
 
-      <div className="bg-white p-2 rounded-lg shadow-lg">
-        <div className="p-2 grid md:grid-cols-5 gap-2 md:gap-5">
+      <div className="bg-white p-3 rounded-lg shadow-lg">
+        <div className="px-10 flex justify-between">
           <div className=" grid grid-cols-3 items-center md:flex  justify-between">
             <div className="col-span-2 gap-2">
               <h1 className=" font-bold text-xl">Vencieron hoy</h1>
               <p>
-                <span>30</span> membresias
+                <span>{dataFilter().length}</span> membresias
               </p>
             </div>
 
@@ -49,38 +55,6 @@ const ViewRenovaciones = () => {
                 <RiFileExcel2Fill className="m-auto text-2xl" />
               </button>
             </div>
-          </div>
-
-          <div className=" md:col-span-3 my-auto">
-            <form className="flex">
-              <input
-                type="text"
-                placeholder="Buscar usuario..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
-              />
-              <button
-                type="button"
-                className=" inset-y-0 right-0 flex -ml-5 items-center px-4 text-white bg-zinc-700 rounded-r-lg hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-300"
-              >
-                <HiSearchCircle className="text-2xl" />
-              </button>
-            </form>
-          </div>
-          <div className="hidden md:flex justify-center divide-x-4 h-auto items-center ">
-            <button
-              onClick={toggleOptionsExport}
-              type="button"
-              className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
-            >
-              <RiFileExcel2Fill /> Exportar
-            </button>
-            {/* Recuadro con opciones de exportación */}
-            {optionsExport && (
-              <MenuExport
-                onDownload={handleDownload}
-                onSendReport={handleSendReport}
-              />
-            )}
           </div>
         </div>
 
@@ -109,48 +83,78 @@ const ViewRenovaciones = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 font-medium text-center items-center">
-              <tr key={1} className="hover:bg-gray-100 ">
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>1</p>
-                </td>
+              {dataFilter ? (
+                dataFilter().map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-100 ">
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <p>{index + 1}</p>
+                    </td>
 
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>Basica</p>
-                </td>
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>Basica</p>
-                </td>
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>Basica</p>
-                </td>
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>Basica</p>
-                </td>
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>Basica</p>
-                </td>
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>Basica</p>
-                </td>
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <button
-                    className="text-blue-400 hover:text-blue-700 transition-colors duration-300"
-                    onClick={() => openModal(1)}
-                  >
-                    <BsBootstrapReboot className="text-3xl" />
-                  </button>
-                  {/* MODAL RENOVACION */}
-                  {activeModal === 1 && ( // Verifica si el modal es para este item
-                    <ModalRenovacion closeModal={closeModal} />
-                  )}
-                </td>
-              </tr>
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <img
+                        className="w-16 h-16 rounded-full ring-2 ring-red-800 m-auto"
+                        src={item.cliente_img_secure_url}
+                        alt="profile"
+                      />
+                    </td>
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <p>{`${item.cliente_nombre} ${item.cliente_apellido_paterno} ${item.cliente_apellido_materno}`}</p>
+                    </td>
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <p>{item.cliente_telefono}</p>
+                    </td>
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <p>{item.membresia_nombre}</p>
+                    </td>
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <p>
+                        {format(
+                          new Date(item.fecha_compra),
+                          "dd 'de' MMMM, yyyy",
+                          { locale: es }
+                        )}
+                      </p>
+                    </td>
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <p>${item.membresia_precio}</p>
+                    </td>
+                    <td className="px-6 py-2 text-sm  text-gray-700">
+                      <button
+                        className="text-blue-400 hover:text-blue-700 transition-colors duration-300"
+                        onClick={() => openModal(item)}
+                      >
+                        <BsBootstrapReboot className="text-3xl" />
+                      </button>
+                      {/* MODAL RENOVACION */}
+                      {activeModal === item.compra_id && ( // Verifica si el modal es para este item
+                        <Modal closeModal={closeModal}>
+                          <ModalRenovacion
+                            closeModal={closeModal}
+                            renewalClient={renewalClient}
+                          />
+                        </Modal>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-6 py-2 text-sm  text-gray-700">
+                    {" "}
+                    No se encontraron datos
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   );
+};
+
+ViewRenovaciones.propTypes = {
+  membershipsClient: PropTypes.array,
 };
 
 export default ViewRenovaciones;

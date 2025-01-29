@@ -12,6 +12,7 @@ import { es } from "date-fns/locale"; // Importamos el idioma español
 import InformeVentaProducto from "./InformeVentaProducto";
 import clienteAxios from "../../config/axios";
 import Alerta from "../Alerta";
+import { exportDataToExcel } from "../../utils/exportDataToExcel";
 
 const ProductosVentas = () => {
   const [salesProduct, setSalesProduct] = useState([]);
@@ -36,8 +37,44 @@ const ProductosVentas = () => {
   const toggleOptionsExport = () => {
     setOptionsExport((prev) => !prev);
   };
+
+  const headers = [
+    "#",
+    "Nombre cliente",
+    "Fecha compra",
+    "Hora compra",
+    "Products",
+    "Total",
+  ];
+
+  const generateExcelData = (data) => {
+    return data.map((item, index) => ({
+      "#": index + 1,
+      Nombre_cliente: `${item.cliente.nombre} ${
+        item.cliente.apellido_paterno || ""
+      } ${item.cliente.apellido_materno || ""}`,
+      Fecha_Compra: format(new Date(item.fecha_venta), "dd 'de' MMMM, yyyy", {
+        locale: es,
+      }),
+      Hora_compra: format(new Date(item.fecha_venta), "hh:mm a", {
+        locale: es,
+      }),
+      Products: item.detalles_productos.map(product => product.nombre_producto).join(", "),
+      Total: item.total,
+    }));
+  };
+
   const handleDownload = async () => {
-    console.log("Descargando.....");
+    if (filtroData().length === 0) {
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
+    exportDataToExcel(
+      generateExcelData(filtroData()),
+      headers,
+      `ventas_productos`,
+      "download"
+    );
+    return mostrarAlerta("Reporte descargado", false);
   };
   const handleSendReport = async () => {
     console.log("Enviando.....");

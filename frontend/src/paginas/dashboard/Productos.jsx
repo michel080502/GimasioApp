@@ -62,10 +62,14 @@ const Productos = () => {
     setProductos((prev) => prev.filter((categoria) => categoria.id !== id));
   };
 
-  const dataUpdatedProduct = (id) => {
-    setProductos((prev) => prev.filter((producto) => producto.id !== id));
+  const dataUpdatedProduct = (producto) => {
+    setProductos((prev) =>
+      prev.map((item) =>
+        item.id === producto.id ? { ...item, ...producto } : item
+      )
+    );
   };
-  
+
   const actualizarDisponibleProductos = (id, newValue) => {
     setProductos((prev) =>
       prev.map((producto) =>
@@ -119,7 +123,6 @@ const Productos = () => {
         formatoPrecio={formatoPrecio}
         actualizarDisponibleProductos={actualizarDisponibleProductos}
         dataDeletedProducto={dataDeletedProducto}
-      
       />
       {/* Modal de agregar productos */}
       {activeModal === "registrar" && (
@@ -130,7 +133,11 @@ const Productos = () => {
               <IoMdCloseCircle className="text-2xl" />
             </button>
           </div>
-          <FormRegistro categorias={categorias} formatoPrecio={formatoPrecio} recargarDatos={recargarDatos} />
+          <FormRegistro
+            categorias={categorias}
+            formatoPrecio={formatoPrecio}
+            recargarDatos={recargarDatos}
+          />
         </Modal>
       )}
       {/* Modal de registro */}

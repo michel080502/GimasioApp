@@ -62,11 +62,11 @@ const Clients = ({ clientes, seleccionarCliente }) => {
                 <img
                   className={`w-24 h-24 p m-auto rounded-lg shadow-md ring 
                     ${
-                      item.estado_membresia === "Activa"
+                      item.estado === "Activa"
                         ? "ring-green-700 shadow-green-700"
-                        : item.estado_membresia === "Vencida"
+                        : item.estado === "Vencida"
                         ? "ring-red-700 shadow-red-700"
-                        : item.estado_membresia === "Por vencer"
+                        : item.estado === "Por vencer"
                         ? "ring-yellow-600 shadow-yellow-600"
                         : "ring-orange-600 shadow-orange-600"
                     }`}
@@ -75,7 +75,7 @@ const Clients = ({ clientes, seleccionarCliente }) => {
                 />
                 <div className="text-sm ">
                   <p className="text-gray-600">Nombre:</p>
-                  <p className="font-normal">{`${item.cliente_nombre} ${item.cliente_apellido_paterno} ${item.cliente_apellido_paterno}`}</p>
+                  <p className="font-normal">{`${item.cliente_nombre} ${item.cliente_apellido_paterno} ${item.cliente_apellido_materno}`}</p>
                 </div>
                 <div className="text-sm">
                   <p className="text-gray-600">Telefono:</p>

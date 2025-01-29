@@ -1,8 +1,23 @@
-import { RiFileExcel2Fill } from "react-icons/ri";
-
 import PropTypes from "prop-types";
+import { useEffect, useState } from "react";
 
-const CardsPrincipales = ({ typeView, view }) => {
+const CardsPrincipales = ({ typeView, view, membershipsClient, products }) => {
+  const [count, setCount] = useState({ memberships: 0, productos: 0 });
+
+  useEffect(() => {
+    const count = () => {
+      const memberships = membershipsClient.filter(
+        (membership) => membership.estado === "Vence hoy"
+      ).length;
+      const productos = products.filter(
+        (product) => product.nivel_stock === "Bajo"
+      ).length;
+      setCount({ memberships, productos });
+    };
+
+    count();
+  }, [membershipsClient, products]);
+
   return (
     <div className="p-3 overflow-x-auto md:overflow-hidden no-select">
       <div className="flex w-auto space-x-4 md:grid md:grid-cols-4 md:gap-1">
@@ -21,9 +36,7 @@ const CardsPrincipales = ({ typeView, view }) => {
               onClick={(e) => {
                 e.stopPropagation();
               }}
-            >
-              <RiFileExcel2Fill />
-            </button>
+            ></button>
           </div>
           <div className="p-2 grid gap-3 text-right">
             <h3 className="font-bold text-3xl">50</h3>
@@ -46,12 +59,10 @@ const CardsPrincipales = ({ typeView, view }) => {
               onClick={(e) => {
                 e.stopPropagation();
               }}
-            >
-              <RiFileExcel2Fill />
-            </button>
+            ></button>
           </div>
           <div className="p-2 grid gap-3 text-right">
-            <h3 className="font-bold text-3xl">60</h3>
+            <h3 className="font-bold text-3xl">{count.memberships}</h3>
             <p className="font-light text-sm">Necesitan ser renovadas hoy</p>
           </div>
         </div>
@@ -71,18 +82,16 @@ const CardsPrincipales = ({ typeView, view }) => {
               onClick={(e) => {
                 e.stopPropagation();
               }}
-            >
-              <RiFileExcel2Fill />
-            </button>
+            ></button>
           </div>
           <div className="p-2 grid gap-3 text-right">
-            <h3 className="font-bold text-3xl">40</h3>
+            <h3 className="font-bold text-3xl">{count.productos}</h3>
             <p className="font-light text-sm">
               Productos necesitan suministros
             </p>
           </div>
         </div>
-        
+
         <div
           className={`w-44 flex-shrink-0 md:w-auto  p-4 rounded-xl shadow-lg shadow-gray-500/50 cursor-pointer transition duration-300 ${
             view === "ingresos-dia" ? "bg-gray-900 text-white" : "bg-white"
@@ -98,9 +107,7 @@ const CardsPrincipales = ({ typeView, view }) => {
               onClick={(e) => {
                 e.stopPropagation();
               }}
-            >
-              <RiFileExcel2Fill />
-            </button>
+            ></button>
           </div>
           <div className="p-2 grid gap-3 text-right">
             <h3 className="font-bold text-3xl">$3000.00</h3>
@@ -115,6 +122,8 @@ const CardsPrincipales = ({ typeView, view }) => {
 CardsPrincipales.propTypes = {
   typeView: PropTypes.func,
   view: PropTypes.string,
+  membershipsClient: PropTypes.array,
+  products: PropTypes.array,
 };
 
 export default CardsPrincipales;

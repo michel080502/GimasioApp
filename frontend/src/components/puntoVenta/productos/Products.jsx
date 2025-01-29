@@ -53,8 +53,8 @@ const Products = ({ formatoPrecio, productos, seleccionarProductos }) => {
 
                 <img
                   className="w-24 h-24 m-auto rounded-lg shadow-lg"
-                  src="/assets/proteina.jpg"
-                  alt=""
+                  src={item.img_secure_url}
+                  alt={item.nombre}
                 />
                 <div className="text-sm ">
                   <p className="text-gray-600 text-xs">Nombre:</p>

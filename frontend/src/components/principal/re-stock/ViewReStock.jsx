@@ -1,21 +1,17 @@
-import { HiSearchCircle } from "react-icons/hi";
 import { RiFileExcel2Fill } from "react-icons/ri";
 
-import { useState } from "react";
-import MenuExport from "../../ui/MenuExport";
+import PropTypes from "prop-types";
 
-const ViewReStock = () => {
-  const [optionsExport, setOptionsExport] = useState(null);
+const ViewReStock = ({ products }) => {
+  const dataFilter = () => {
+    if (!Array.isArray(products)) {
+      return [];
+    }
+    const resultado = products.filter(
+      (product) => product.nivel_stock === "Bajo"
+    );
 
-  const toggleOptionsExport = () => {
-    setOptionsExport((prev) => !prev);
-  };
-
-  const handleDownload = async () => {
-    console.log("Descargando.....");
-  };
-  const handleSendReport = async () => {
-    console.log("Enviando.....");
+    return resultado;
   };
 
   return (
@@ -42,38 +38,6 @@ const ViewReStock = () => {
               </button>
             </div>
           </div>
-
-          <div className=" md:col-span-3 my-auto">
-            <form className="flex">
-              <input
-                type="text"
-                placeholder="Buscar producto..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-800"
-              />
-              <button
-                type="button"
-                className=" inset-y-0 right-0 flex -ml-5 items-center px-4 text-white bg-zinc-700 rounded-r-lg hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-300"
-              >
-                <HiSearchCircle className="text-2xl" />
-              </button>
-            </form>
-          </div>
-          <div className="hidden md:flex justify-center divide-x-4 h-auto items-center ">
-            <button
-              onClick={toggleOptionsExport}
-              type="button"
-              className="scale-hover-10 gap-3 rounded-lg px-3 py-1 bg-black flex text-white justify-center items-center hover:bg-red-600"
-            >
-              <RiFileExcel2Fill /> Exportar
-            </button>
-            {/* Recuadro con opciones de exportación */}
-            {optionsExport && (
-              <MenuExport
-                onDownload={handleDownload}
-                onSendReport={handleSendReport}
-              />
-            )}
-          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -81,29 +45,54 @@ const ViewReStock = () => {
             <thead className="bg-gray-100 text-xs ">
               <tr className="text-center">
                 <th className="px-5 py-2 text-gray-700 uppercase">#</th>
-                <th className="px-5 py-2 text-gray-700 uppercase">
-                  Foto
-                </th>
-                <th className="px-5 py-2 text-gray-700 uppercase">
-                  Nombre
-                </th>
+                <th className="px-5 py-2 text-gray-700 uppercase">Foto</th>
+                <th className="px-5 py-2 text-gray-700 uppercase">Nombre</th>
+                <th className="px-5 py-2 text-gray-700 uppercase">Marca</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Categoria</th>
                 <th className="px-5 py-2 text-gray-700 uppercase">Stock</th>
-                <th className="px-5 py-2 text-gray-700 uppercase">Precio</th>
-                <th className="px-5 py-2 text-gray-700 uppercase">Descuento</th>
-                <th className="px-5 py-2 text-gray-700 uppercase">Total</th>
+                <th className="px-5 py-2 text-gray-700 uppercase">Precio final</th>
+                
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 font-medium text-center items-center">
-              <tr key={1} className="hover:bg-gray-100 ">
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>1</p>
-                </td>
+              {dataFilter ? (
+                dataFilter().map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-100 ">
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      <p>{index + 1}</p>
+                    </td>
 
-                <td className="px-6 py-4 text-sm  text-gray-700">
-                  <p>Basica</p>
-                </td>
-              </tr>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      <img
+                        className="w-16 rounded-full ring-2 ring-red-800 m-auto"
+                        src={item.img_secure_url}
+                        alt={item.nombre}
+                      />
+                    </td>
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      {item.nombre}
+                    </td>
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      {item.marca}
+                    </td>
+                    <td className="px-3 py-3 text-sm  text-gray-700">
+                      {item.categoria}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      {item.stock}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-gray-700">
+                      ${item.total}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr key={1} className="hover:bg-gray-100 ">
+                  <td className="px-6 py-4 text-sm  text-gray-700">
+                    <p>No hay productos con bajo stock</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -112,4 +101,7 @@ const ViewReStock = () => {
   );
 };
 
+ViewReStock.propTypes = {
+  products: PropTypes.array,
+};
 export default ViewReStock;

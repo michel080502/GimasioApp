@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import clienteAxios from "../../config/axios";
 import PropTypes from "prop-types";
 import Alerta from "../Alerta";
-const FormUpdate = ({ selectedProd, categorias, formatoPrecio }) => {
+const FormUpdate = ({ selectedProd, categorias, formatoPrecio, dataUpdatedProduct }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [producto, setProducto] = useState(selectedProd);
   const [alerta, setAlerta] = useState({ msg: "", error: false });
@@ -61,6 +61,7 @@ const FormUpdate = ({ selectedProd, categorias, formatoPrecio }) => {
         `/producto/actualizar/${producto.id}`,
         producto
       );
+      dataUpdatedProduct(producto);
       mostrarAlerta(data.msg, false);
     } catch (error) {
       mostrarAlerta(error.response.data.msg, true);
@@ -261,6 +262,7 @@ FormUpdate.propTypes = {
     })
   ),
   formatoPrecio: PropTypes.instanceOf(Intl.NumberFormat).isRequired,
+  dataUpdatedProduct: PropTypes.func,
 };
 
 export default FormUpdate;
