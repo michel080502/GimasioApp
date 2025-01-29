@@ -334,6 +334,75 @@ const obtenerVentasMembresias = async (req, res) => {
   }
 };
 
+const comprarVisitas = async (req, res) => {
+  const { cliente } = req.body;
+  //Validar que el cliente tenga un ID o datos de cliente externo
+  if (!cliente) {
+    return res.status(400).json({
+      msg: "Debe proporcionar la información del cliente.",
+    });
+  }
+  try {
+    // Verificar si el cliente es externo o registrado
+    const esClienteExterno = isNaN(cliente) && typeof cliente === "string";
+    //Validar si el cliente existe en la base
+    if (!esClienteExterno) {
+      const checkCliente = `SELECT * FROM clientes WHERE id = $1 AND eliminado = false;`;
+      const { rows: clienteRegistrado } = await pool.query(checkCliente, [
+        cliente,
+      ]);
+      if (clienteRegistrado.length === 0) {
+        return res
+          .status(404)
+          .json({ msg: "El cliente no existe o ha sido eliminado." });
+      }
+      //Valida si el cliente tiene una membresia activa
+      const queryFindMembresiaActiva = `SELECT * FROM vista_membresias_clientes WHERE cliente_id = $1;`;
+      const { rows: clienteMembresiaActiva } = await pool.query(
+        queryFindMembresiaActiva,
+        [cliente]
+      );
+      //Valida si el cliente ya cuenta con una membresia y que este activa
+      if (
+        clienteMembresiaActiva.length > 0 &&
+        clienteMembresiaActiva[0].estado !== "Vencida"
+      ) {
+        const error = new Error(
+          "El cliente ya cuenta con una membresia activa"
+        );
+        return res.status(404).json({ msg: error.message });
+      }
+    }
+    //Consultamos el precio de la visita
+    const queryPrecio = `SELECT precio_visita FROM configuracion_gym ORDER BY id DESC LIMIT 1;`;
+    const { rows: precioVisita } = await pool.query(queryPrecio);
+    //Validar si se recupero el precio de la visita
+    if (precioVisita.length === 0) {
+      return res.status(404).json({
+        msg: "Error al recuperar el precio de la visita",
+      });
+    }
+    // Query para insertar la venta dependiendo si es cliente externo o registrado
+    const ventaInsert = esClienteExterno
+      ? `INSERT INTO visitas (cliente_externo, fecha_visita, precio) VALUES ($1, $2, $3) RETURNING *;`
+      : `INSERT INTO visitas (cliente_id, fecha_visita, precio) VALUES ($1, $2, $3) RETURNING *;`
+    // Realizar la venta
+    const { rows: venta } = await pool.query(ventaInsert, [
+      cliente,
+      new Date(),
+      precioVisita[0].precio_visita,
+    ]);
+    //Devuelve la respuesta con la venta realizada
+    return res
+      .status(201)
+      .json({ msg: "Visita realizada con éxito", venta: venta[0] });
+  } catch (error) {
+    console.log(error);
+    console.error("Error al realizar la venta:", error.message);
+    return res.status(500).json({ msg: "Hubo un error al procesar la venta." });
+  }
+};
+
 export {
   comprarMembresia,
   renovarMembresia,
@@ -342,4 +411,5 @@ export {
   cancelarCompraProductos,
   obtenerVentasProductos,
   obtenerVentasMembresias,
+  comprarVisitas,
 };

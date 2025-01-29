@@ -272,6 +272,16 @@ const registrarAsistencia = async (req, res) => {
         msg: "El cliente no cuenta con una membresia activa",
       });
     }
+    //Valida si el cliente ya asistió el día de hoy
+    const queryFindAsistencia = `SELECT * FROM asistencias WHERE cliente_id = $1 AND fecha_asistencia::date = NOW()::date`;
+    const { rows: asistencia } = await pool.query(queryFindAsistencia, [
+      cliente[0].id,
+    ]);
+    if (asistencia.length > 0) {
+      return res.status(400).json({
+        msg: "El cliente ya asistió el día de hoy",
+      });
+    }
     //Registra la visita del cliente
     const queryInsert = `INSERT INTO asistencias(cliente_id, fecha_asistencia) VALUES ($1, NOW())`;
     const { rows: visita } = await pool.query(queryInsert, [cliente[0].id]);
