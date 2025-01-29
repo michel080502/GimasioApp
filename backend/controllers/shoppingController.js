@@ -403,6 +403,19 @@ const comprarVisitas = async (req, res) => {
   }
 };
 
+const obtenerVentasVisitas = async (req, res) => {
+  try {
+    const querySelect = "SELECT * FROM vista_compras_visitas";
+    const { rows: ventasVisitas } = await pool.query(querySelect);
+    return res.status(200).json(ventasVisitas);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      msg: "Hubo error al obtener las ventas de visitas",
+    });
+  }
+}
+
 export {
   comprarMembresia,
   renovarMembresia,
@@ -412,4 +425,5 @@ export {
   obtenerVentasProductos,
   obtenerVentasMembresias,
   comprarVisitas,
+  obtenerVentasVisitas
 };
