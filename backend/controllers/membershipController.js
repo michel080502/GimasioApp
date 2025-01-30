@@ -57,7 +57,7 @@ const crear = async (req, res) => {
   }
 };
 
-const actualizar = async (req, res) => {
+const actualizar = async (req, res) => { 
   try {
     const { id } = req.params;
     const { nombre, beneficios, duracion_dias, precio, disponible } = req.body;
