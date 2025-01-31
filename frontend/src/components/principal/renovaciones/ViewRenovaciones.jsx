@@ -83,7 +83,7 @@ const ViewRenovaciones = ({ membershipsClient }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 font-medium text-center items-center">
-              {dataFilter ? (
+              {dataFilter.length != 0 ? (
                 dataFilter().map((item, index) => (
                   <tr key={index} className="hover:bg-gray-100 ">
                     <td className="px-6 py-2 text-sm  text-gray-700">

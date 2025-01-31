@@ -5,12 +5,15 @@ import { useEffect, useState } from "react";
 import ViewRenovaciones from "../../components/principal/renovaciones/ViewRenovaciones";
 import ViewReStock from "../../components/principal/re-stock/ViewReStock";
 import clienteAxios from "../../config/axios";
+import ViewProductos from "../../components/principal/ventas/ViewProductos";
 
 function DashPrincipal() {
   const [view, setView] = useState("asistencias-dia");
   const [loading, setLoading] = useState(true);
   const [membershipsClient, setMembershipsClient] = useState([]);
   const [products, setProducts] = useState([]);
+  const [salesVisit, setSalesVisit] = useState([]);
+  const [salesProduct, setSalesProduct] = useState([]);
 
   const typeView = (type) => {
     setView((prev) => (prev === type ? "asistencias-dia" : type));
@@ -35,8 +38,29 @@ function DashPrincipal() {
         setProducts([]);
       }
     };
+    const getSalesVisit = async () => {
+      try {
+        const { data } = await clienteAxios.get("/compra/ventas-visitas");
+        setSalesVisit(data);
+      } catch (error) {
+        console.error(error);
+        setSalesVisit([]);
+      }
+    };
+
+    const getSalesProduct = async () => {
+      try {
+        const { data } = await clienteAxios.get("/compra/ventas-productos");
+        setSalesProduct(data);
+      } catch (error) {
+        console.error(error);
+        setSalesProduct([]);
+      }
+    };
     getMemberships();
     getProducts();
+    getSalesVisit();
+    getSalesProduct();
     setLoading(false);
   }, []);
 
@@ -48,13 +72,18 @@ function DashPrincipal() {
         view={view}
         membershipsClient={membershipsClient}
         products={products}
+        salesVisit={salesVisit}
+        salesProduct={salesProduct}
       />
 
-      {view === "asistencias-dia" && <ViewAsistenciasHoy />}
+      {view === "asistencias-dia" && (
+        <ViewAsistenciasHoy salesVisit={salesVisit} />
+      )}
       {view === "renovaciones" && (
         <ViewRenovaciones membershipsClient={membershipsClient} />
       )}
       {view === "re-stock" && <ViewReStock products={products} />}
+      {view === "productos" && <ViewProductos salesProduct={salesProduct} />}
     </div>
   );
 }

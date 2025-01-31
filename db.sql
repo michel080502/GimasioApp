@@ -32,7 +32,7 @@ CREATE TABLE clientes (
 );
 
 -- Tabla de visitas
-CREATE TABLE visitas_compras (
+CREATE TABLE visitas (
     id SERIAL PRIMARY KEY,
     cliente_id INT,
     nombre_invitado VARCHAR(255),
@@ -320,3 +320,16 @@ FROM detalles_ventas dv
     LEFT JOIN productos p ON dv.producto_id = p.id
     LEFT JOIN categorias_productos cat ON p.categoria_id = cat.id
 GROUP BY v.id, v.fecha_venta, v.total, v.cliente_id, v.cliente_externo, c.id;
+
+CREATE OR REPLACE VIEW vista_compras_visitas AS
+SELECT v.id AS visita_id,
+    v.fecha_visita,
+    v.precio,
+    v.tipo,
+        CASE
+            WHEN v.cliente_id IS NOT NULL THEN json_build_object('nombre', c.nombre, 'apellidoPaterno', c.apellido_paterno, 'apellidoMaterno', c.apellido_materno, 'email', c.email, 'telefono', c.telefono)
+            WHEN v.cliente_externo IS NOT NULL THEN json_build_object('nombre', v.cliente_externo)
+            ELSE NULL::json
+        END AS cliente
+   FROM visitas v
+     LEFT JOIN clientes c ON v.cliente_id = c.id;

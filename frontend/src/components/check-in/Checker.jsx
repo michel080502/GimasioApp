@@ -29,26 +29,54 @@ const Checker = () => {
       setAlerta({ msg: "", error: false });
     }, 4000);
   };
+  const handleAssist = async () => {
+    try {
+      const { data } = await clienteAxios.post("/cliente/asistencia", {
+        matricula_cliente: clienteSeleccionado.cliente_matricula,
+      });
+      mostrarAlerta(data.msg, false);
+      setTimeout(() => {
+        setClienteSeleccionado(null);
+      }, 2000);
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
+    }
+  };
 
-  const handleSellVisit = (e) => {
+  const handleSellVisit = async (e) => {
     e.preventDefault();
 
     if (clienteExterno.trim() === "") {
-      mostrarAlerta("No se pudo realizar la compra, falta el cliente", true);
-    } else {
-      mostrarAlerta("Venta realizada con exito, permite acceso", false);
+      return mostrarAlerta(
+        "No se pudo realizar la compra, falta el cliente",
+        true
+      );
     }
-    setClienteExterno("");
-    return;
+
+    try {
+      const { data } = await clienteAxios.post("/compra/visita", {
+        cliente: clienteExterno,
+      });
+      mostrarAlerta(data.msg, false);
+      setTimeout(() => {
+        setExternalVisit(null);
+      }, 2500);
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
+    }
   };
 
-  const sellVisitClient = (id) => {
-    if (id) {
-      mostrarAlerta(
-        "Venta realizada correctamente, permita acceso con visita",
-        false
-      );
-      return;
+  const sellVisitClient = async (id) => {
+    try {
+      const { data } = await clienteAxios.post("/compra/visita", {
+        cliente: id,
+      });
+      mostrarAlerta(data.msg, false);
+      setTimeout(() => {
+        setClienteSeleccionado(null);
+      }, 4000);
+    } catch (error) {
+      mostrarAlerta(error.response.data.msg, true);
     }
   };
 
@@ -131,11 +159,11 @@ const Checker = () => {
               <img
                 className={`w-24 h-24 p mx-auto rounded-lg shadow-md ring 
                   ${
-                    clienteSeleccionado.estado_membresia === "Activa"
+                    clienteSeleccionado.estado === "Activa"
                       ? "ring-green-700 shadow-green-700"
-                      : clienteSeleccionado.estado_membresia === "Vencida"
+                      : clienteSeleccionado.estado === "Vencida"
                       ? "ring-red-700 shadow-red-700"
-                      : clienteSeleccionado.estado_membresia === "Por vencer"
+                      : clienteSeleccionado.estado === "Por vencer"
                       ? "ring-yellow-600 shadow-yellow-600"
                       : "ring-orange-600 shadow-orange-600"
                   }`}
@@ -146,11 +174,17 @@ const Checker = () => {
                 <p className="absolute top-[-13px] left-[2px] text-lg font-semibold bg-white px-2">
                   Cliente
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 ">
                   <div className="p-1">
                     <p className="text-sm text-gray-700">Nombre:</p>
                     <p className="text-base font-normal">
                       {`${clienteSeleccionado.cliente_nombre} ${clienteSeleccionado.cliente_apellido_paterno} ${clienteSeleccionado.cliente_apellido_materno}`}
+                    </p>
+                  </div>
+                  <div className="p-1">
+                    <p className="text-sm text-gray-700">Matricula:</p>
+                    <p className="text-base font-normal">
+                      {`${clienteSeleccionado.cliente_matricula}`}
                     </p>
                   </div>
                   <div className="p-1">
@@ -208,7 +242,11 @@ const Checker = () => {
               {clienteSeleccionado.estado === "Activa" ||
               clienteSeleccionado.estado === "Por vencer" ? (
                 <div className="m-auto">
-                  <button className="bg-gray-700 text-sm text-white py-1 px-2 rounded-lg hover:bg-black transform duration-200 m-auto">
+                  <button
+                    className="bg-gray-700 text-sm text-white py-1 px-2 rounded-lg hover:bg-black transform duration-200 m-auto"
+                    type="button"
+                    onClick={handleAssist}
+                  >
                     Ingresar asistencia
                   </button>
                 </div>
@@ -221,9 +259,10 @@ const Checker = () => {
                     Renovar membresia
                   </button>
                   <button
+                    type="button"
                     className="bg-gray-700 text-sm text-white py-1 px-2 rounded-lg hover:bg-black transform duration-200 m-auto"
                     onClick={() => {
-                      sellVisitClient(clienteSeleccionado.id);
+                      sellVisitClient(clienteSeleccionado.cliente_id);
                     }}
                   >
                     Comprar visita
@@ -257,12 +296,10 @@ const Checker = () => {
     );
   } else {
     return (
- 
-        <ModalRenovacion
-          closeModal={closeModal}
-          renewalClient={clienteSeleccionado}
-        />
-    
+      <ModalRenovacion
+        closeModal={closeModal}
+        renewalClient={clienteSeleccionado}
+      />
     );
   }
 };

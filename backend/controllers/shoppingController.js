@@ -384,8 +384,8 @@ const comprarVisitas = async (req, res) => {
     }
     // Query para insertar la venta dependiendo si es cliente externo o registrado
     const ventaInsert = esClienteExterno
-      ? `INSERT INTO visitas (cliente_externo, fecha_visita, precio) VALUES ($1, $2, $3) RETURNING *;`
-      : `INSERT INTO visitas (cliente_id, fecha_visita, precio) VALUES ($1, $2, $3) RETURNING *;`
+      ? `INSERT INTO visitas (cliente_externo, fecha_visita, precio ) VALUES ($1, $2, $3) RETURNING *;`
+      : `INSERT INTO visitas (cliente_id, fecha_visita, precio) VALUES ($1, $2, $3) RETURNING *;`;
     // Realizar la venta
     const { rows: venta } = await pool.query(ventaInsert, [
       cliente,
@@ -414,7 +414,7 @@ const obtenerVentasVisitas = async (req, res) => {
       msg: "Hubo error al obtener las ventas de visitas",
     });
   }
-}
+};
 
 export {
   comprarMembresia,
@@ -425,5 +425,5 @@ export {
   obtenerVentasProductos,
   obtenerVentasMembresias,
   comprarVisitas,
-  obtenerVentasVisitas
+  obtenerVentasVisitas,
 };
