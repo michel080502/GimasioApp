@@ -8,11 +8,13 @@ import {
   getById,
   update,
   registrarAsistencia,
+  obtenerAsistencias,
 } from "../controllers/clientController.js";
 
 const router = express.Router();
 router.get("/", getAll);
 router.get("/no-activos", obtenerClientesNoActivos);
+router.get("/asistencias",obtenerAsistencias);
 router.get("/:id", getById);
 router.post(
   "/crear",
