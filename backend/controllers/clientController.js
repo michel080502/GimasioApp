@@ -294,5 +294,15 @@ const registrarAsistencia = async (req, res) => {
     res.status(500).json({ msg: "Hubo un error en el servidor" });
   }
 };
+const obtenerAsistencias = async (req, res) => {
+  try {
+    const query = `SELECT * FROM vista_asistencias`;
+    const { rows: asistencias } = await pool.query(query);
+    res.json(asistencias);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Hubo un error en el servidor" });
+  }
+}
 
-export { crear, update, getAll, getById, deleteById, obtenerClientesNoActivos, registrarAsistencia};
+export { crear, update, getAll, getById, deleteById, obtenerClientesNoActivos, registrarAsistencia,obtenerAsistencias};
