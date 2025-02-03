@@ -14,6 +14,7 @@ function DashPrincipal() {
   const [products, setProducts] = useState([]);
   const [salesVisit, setSalesVisit] = useState([]);
   const [salesProduct, setSalesProduct] = useState([]);
+  const [attendances, setAttendances] = useState([]);
 
   const typeView = (type) => {
     setView((prev) => (prev === type ? "asistencias-dia" : type));
@@ -57,10 +58,21 @@ function DashPrincipal() {
         setSalesProduct([]);
       }
     };
+
+    const getAttendances = async () => {
+      try {
+        const { data } = await clienteAxios("/cliente/asistencias");
+        setAttendances(data);
+      } catch (error) {
+        console.log(error);
+        setAttendances([]);
+      }
+    }
     getMemberships();
     getProducts();
     getSalesVisit();
     getSalesProduct();
+    getAttendances();
     setLoading(false);
   }, []);
 
@@ -74,10 +86,11 @@ function DashPrincipal() {
         products={products}
         salesVisit={salesVisit}
         salesProduct={salesProduct}
+        attendances={attendances}
       />
 
       {view === "asistencias-dia" && (
-        <ViewAsistenciasHoy salesVisit={salesVisit} />
+        <ViewAsistenciasHoy salesVisit={salesVisit} attendances={attendances}/>
       )}
       {view === "renovaciones" && (
         <ViewRenovaciones membershipsClient={membershipsClient} />

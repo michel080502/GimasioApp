@@ -1,5 +1,4 @@
 import { BsArrowLeftCircleFill } from "react-icons/bs";
-
 import Alerta from "../Alerta";
 import Clients from "./Clients";
 import { useState, useEffect } from "react";

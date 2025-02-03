@@ -8,33 +8,45 @@ const CardsPrincipales = ({
   products,
   salesVisit,
   salesProduct,
+  attendances,
 }) => {
   const [count, setCount] = useState({
     memberships: 0,
     productos: 0,
     visit: 0,
-    totalSales: 0.00,
+    totalSales: 0.0,
+    attendancesTotal: 0,
   });
 
   useEffect(() => {
-    const date = new Date().toISOString().split("T")[0]; // Fecha actual en formato 'YYYY-MM-DD'
+    const today = new Date();
+    const date = today.toLocaleDateString("es-ES"); // Fecha en formato local
 
     const filterSalesProduct = () => {
       return salesProduct
         .filter((sale) => {
-          const saleDate = new Date(sale.fecha_venta)
-            .toISOString()
-            .split("T")[0];
+          const saleDate = new Date(sale.fecha_venta).toLocaleDateString(
+            "es-ES"
+          );
           return saleDate === date;
         })
         .reduce((acc, sale) => acc + Number(sale.total), 0); // Suma los valores de `total`
     };
 
+    const filterAttendances = () => {
+      return attendances.filter((attendance) => {
+        const attendanceDate = new Date(
+          attendance.fecha_asistencia
+        ).toLocaleDateString("es-ES");
+        return attendanceDate === date;
+      }).length;
+    };
+
     const filterSalesVisit = () => {
       return salesVisit.filter((visit) => {
-        const visitDate = new Date(visit.fecha_visita)
-          .toISOString()
-          .split("T")[0];
+        const visitDate = new Date(visit.fecha_visita).toLocaleDateString(
+          "es-ES"
+        );
         return visitDate === date;
       }).length; // Devuelve la cantidad de visitas de hoy
     };
@@ -48,15 +60,14 @@ const CardsPrincipales = ({
         (product) => product.nivel_stock === "Bajo"
       ).length;
 
-      const visits = filterSalesVisit();
+      const visit = filterSalesVisit();
       const totalSales = filterSalesProduct(); // Ahora devuelve la suma total
-
-      setCount({ memberships, productos, visits, totalSales });
+      const attendancesTotal = filterAttendances();
+      setCount({ memberships, productos, visit, totalSales, attendancesTotal });
     };
 
     count();
-  }, [membershipsClient, products, salesVisit, salesProduct]);
-  console.log(salesProduct);
+  }, [membershipsClient, products, salesVisit, salesProduct, attendances]);
   return (
     <div className="p-3 overflow-x-auto md:overflow-hidden no-select">
       <div className="flex w-auto space-x-4 md:grid md:grid-cols-4 md:gap-1">
@@ -78,7 +89,9 @@ const CardsPrincipales = ({
             ></button>
           </div>
           <div className="p-2 grid gap-3 text-right">
-            <h3 className="font-bold text-3xl">{count.visits}</h3>
+            <h3 className="font-bold text-3xl">
+              {count.visit + count.attendancesTotal}
+            </h3>
             <p className="font-light text-sm">Hasta ahora</p>
           </div>
         </div>
@@ -165,6 +178,7 @@ CardsPrincipales.propTypes = {
   products: PropTypes.array,
   salesVisit: PropTypes.array,
   salesProduct: PropTypes.array,
+  attendances: PropTypes.array,
 };
 
 export default CardsPrincipales;

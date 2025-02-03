@@ -333,3 +333,16 @@ SELECT v.id AS visita_id,
         END AS cliente
    FROM visitas v
      LEFT JOIN clientes c ON v.cliente_id = c.id;
+
+
+CREATE OR REPLACE VIEW vista_asistencias AS
+SELECT 
+a.fecha_asistencia,
+c.nombre,
+c.apellido_paterno,
+c.apellido_materno,
+c.img_secure_url,
+c.telefono,
+c.matricula
+FROM asistencias a
+JOIN clientes c ON a.cliente_id = c.id ;

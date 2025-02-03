@@ -1,7 +1,7 @@
 import AsistenciasMembresia from "./AsistenciasMembresia";
 import Visitas from "./Visitas";
 import PropTypes from "prop-types";
-const ViewAsistenciasHoy = ({ salesVisit }) => {
+const ViewAsistenciasHoy = ({ salesVisit, attendances }) => {
   return (
     <>
       <div className="p-4 grid gap-2">
@@ -12,7 +12,7 @@ const ViewAsistenciasHoy = ({ salesVisit }) => {
             <Visitas salesVisit={salesVisit} />
           </div>
           <div className="col-span-3">
-            <AsistenciasMembresia />
+            <AsistenciasMembresia attendances={attendances} />
           </div>
         </div>
       </div>
@@ -22,5 +22,6 @@ const ViewAsistenciasHoy = ({ salesVisit }) => {
 
 ViewAsistenciasHoy.propTypes = {
   salesVisit: PropTypes.array,
+  attendances: PropTypes.array
 };
 export default ViewAsistenciasHoy;

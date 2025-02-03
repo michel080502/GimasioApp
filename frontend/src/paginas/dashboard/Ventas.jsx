@@ -42,7 +42,7 @@ const Ventas = () => {
                   </li>
                   <li className="p-2 bg-gray-700 bg-opacity-25 hover:bg-opacity-30 font-semibold hover:font-bold hover:cursor-pointer"
                   onClick={() => {setFilter("visitas")}}>
-                    Visitas
+                    Visitas / Asistencias
                   </li>
                 </ul>
               </div>

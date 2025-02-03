@@ -65,8 +65,8 @@ const NuevoPassword = () => {
 	const { msg } = alerta;
 	return (
 		<>
-			<div className="shadow-md w-3/4 shadow-slate-600 p-3 mx-20 rounded-2xl h-4/5 flex flex-col justify-center items-center gap-3">
-			<h1 className="text-5xl m-6 font-bold">Nuevo password</h1>
+			<div className="relative shadow-md w-3/4 shadow-slate-600 p-3 mx-20 rounded-2xl h-4/5 flex flex-col justify-center items-center gap-3">
+			<h1 className=" text-5xl m-6 font-bold">Nuevo password</h1>
 			{msg && 
 				<Alerta
 					alerta={alerta}

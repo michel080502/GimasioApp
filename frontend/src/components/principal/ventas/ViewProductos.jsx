@@ -6,10 +6,11 @@ import { es } from "date-fns/locale";
 const ViewProductos = ({ salesProduct }) => {
   const [data, setData] = useState([]);
   useEffect(() => {
-    const date = new Date().toISOString().split("T")[0]; // Fecha actual en formato 'YYYY-MM-DD'
+    const today = new Date();
+    const date = today.toLocaleDateString("es-ES"); // Fecha en formato local
     const filterData = () => {
       return salesProduct.filter((sale) => {
-        const saleDate = new Date(sale.fecha_venta).toISOString().split("T")[0];
+        const saleDate = new Date(sale.fecha_venta).toLocaleDateString("es-ES");
         return saleDate === date;
       });
     };

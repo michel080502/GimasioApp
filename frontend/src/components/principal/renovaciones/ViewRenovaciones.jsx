@@ -26,7 +26,6 @@ const ViewRenovaciones = ({ membershipsClient }) => {
     // Retornar el resultado (vacío si no hay coincidencias)
     return resultado;
   };
-
   const openModal = (item) => {
     setRenewalClient(item);
     setActiveModal(item.compra_id);
@@ -83,7 +82,7 @@ const ViewRenovaciones = ({ membershipsClient }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 font-medium text-center items-center">
-              {dataFilter.length != 0 ? (
+              {dataFilter().length != 0 ? (
                 dataFilter().map((item, index) => (
                   <tr key={index} className="hover:bg-gray-100 ">
                     <td className="px-6 py-2 text-sm  text-gray-700">
@@ -140,7 +139,6 @@ const ViewRenovaciones = ({ membershipsClient }) => {
               ) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-2 text-sm  text-gray-700">
-                    {" "}
                     No se encontraron datos
                   </td>
                 </tr>

@@ -7,11 +7,12 @@ const Visitas = ({ salesVisit }) => {
 
   useEffect(() => {
     const filterSalesVisit = () => {
-      const date = new Date().toISOString().split("T")[0]; // Obtiene la fecha actual en formato 'YYYY-MM-DD'
+      const today = new Date();
+      const date = today.toLocaleDateString("es-ES");
       return salesVisit.filter((visit) => {
-        const visitDate = new Date(visit.fecha_visita)
-          .toISOString()
-          .split("T")[0]; // Convierte la fecha de la visita
+        const visitDate = new Date(visit.fecha_visita).toLocaleDateString(
+          "es-ES"
+        ); // Convierte la fecha de la visita
         return visitDate === date; // Compara solo la parte de la fecha sin la hora
       });
     };

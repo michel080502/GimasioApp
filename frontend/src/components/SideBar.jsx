@@ -79,7 +79,7 @@ const SideBar = ({ admin }) => {
 						`flex font-bold items-center gap-5 rounded-md p-3 text-white 
 						${isActive ? 'border-l-4 border-b-2 rounded-tr-[40px] text-opacity-100' : 'text-opacity-50 hover:border-l-4 hover:border-b-2 transition-[border-width] duration-300 ease-in-out'}`
 					}>
-						<RiMoneyDollarCircleFill /> Ventas
+						<RiMoneyDollarCircleFill /> Reportes
 					</NavLink>
 				</div>
 				
