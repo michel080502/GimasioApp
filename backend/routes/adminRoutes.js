@@ -10,8 +10,10 @@ import {
   actualizar,
   actualizarInfoGym,
   obtenerInfoGym,
+  enviarExcel,
 } from "../controllers/adminController.js";
 import checkAut from "../middleware/authMiddleware.js";
+import  {upload}  from "../helpers/emailExcel.js";
 
 const router = express.Router();
 
@@ -25,9 +27,8 @@ router.get("/gym-info",obtenerInfoGym);
 router.post("/login", autenticar);
 router.post("/olvide-password", olvidePassword);
 router.put("/gym-info/actualizar", actualizarInfoGym);
-// router.get("/olvide-password/:token", comprobarToken);
-// router.post("/olvide-password/:token", nuevoPassword);
 router.route("/olvide-password/:token").get(comprobarToken).post(nuevoPassword);
 router.put("/actualizar/:id", actualizar);
+router.post("/enviar-excel", upload.single("archivo"), enviarExcel);
 
 export default router;

@@ -4,6 +4,8 @@ import generarId from "../helpers/generarId.js";
 import generarJWT from "../helpers/generarJWT.js";
 import emailRegistro from "../helpers/emailRegistro.js";
 import emailOlvidePassword from "../helpers/emailOlvidePassword.js";
+import { emailConExcel, upload } from "../helpers/emailExcel.js";
+import e from "express";
 
 const registrar = async (req, res) => {
   const {
@@ -375,6 +377,26 @@ const obtenerInfoGym = async (req, res) => {
     res.status(500).json({ msg: "Hubo un error en el servidor" });
   }
 };
+
+const enviarExcel = async (req, res) => {
+  try {
+    const archivoPath = req.file.path; // `req.file` es procesado por `multer`
+    const query = "SELECT email_envio_reportes FROM configuracion_gym";
+    const {rows:email} = await pool.query(query);
+
+    if (email.length === 0) {
+      return res.status(404).json({ error: "No se ha configurado el email para enviar los reportes, por favor configurelo" });
+    }
+    console.log(email[0].email_envio_reportes);
+    const destinatario = email[0].email_envio_reportes;
+    await emailConExcel(destinatario, archivoPath );
+
+    res.json({ message: "Correo enviado con éxito" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Error al enviar el correo" });
+  }
+};
 export {
   registrar,
   perfil,
@@ -386,4 +408,5 @@ export {
   actualizar,
   actualizarInfoGym,
   obtenerInfoGym,
+  enviarExcel,
 };
