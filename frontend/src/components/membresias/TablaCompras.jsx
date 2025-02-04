@@ -145,7 +145,16 @@ const TablaCompras = ({ tipo, purchaseMembership }) => {
     return mostrarAlerta("Reporte descargado", false);
   };
   const handleSendReport = async () => {
-    console.log("Enviando.....");
+    if (filtrados().length === 0) {
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
+    exportDataToExcel(
+      generateExcelData(filtrados()),
+      headers,
+      `reporte_membresias_clientes_${tipo || ""}`,
+      "send"
+    );
+    return mostrarAlerta("Reporte enviado", false);
   };
 
   const { msg } = alerta;

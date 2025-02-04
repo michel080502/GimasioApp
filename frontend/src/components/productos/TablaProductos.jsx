@@ -73,21 +73,29 @@ const TablaProductos = ({
   };
 
   const handleDownload = async () => {
+    if(filterProducts().length === 0 ){
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
     exportDataToExcel(
       generateExcelData(filterProducts()),
       headers,
       `reporte_productos_${dataType || categoriaFiltro}`,
       "download"
-    );
+    ); 
+    return mostrarAlerta("Reporte descargado", false);
   };
 
   const handleSendReport = async () => {
+    if(filterProducts().length === 0 ){
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
     exportDataToExcel(
       generateExcelData(productos),
       headers,
       `reporte_productos_${categoriaFiltro}`,
       "send"
     );
+    return mostrarAlerta("Reporte enviado", false);
   };
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);

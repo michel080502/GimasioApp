@@ -77,7 +77,16 @@ const ProductosVentas = () => {
     return mostrarAlerta("Reporte descargado", false);
   };
   const handleSendReport = async () => {
-    console.log("Enviando.....");
+    if (filtroData().length === 0) {
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
+    exportDataToExcel(
+      generateExcelData(filtroData()),
+      headers,
+      `ventas_productos`,
+      "send"
+    );
+    return mostrarAlerta("Reporte enviado", false);
   };
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);

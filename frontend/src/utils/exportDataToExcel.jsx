@@ -1,6 +1,6 @@
 // utils/exportExcel.js
 import exportToExcel from "./exportToExcel";
-// import clienteAxios from "../config/axios";
+import clienteAxios from "../config/axios";
 
 const exportDataToExcel = async (generateExcelData, headers, fileName, type) => {
   try {
@@ -31,14 +31,14 @@ const exportDataToExcel = async (generateExcelData, headers, fileName, type) => 
     } else {
         const fileName = `reporte_clientes_${formattedDate}.xlsx`;
         const formData = new FormData();
-        formData.append("file", blob, fileName);
-        // Falta implementar esta API
-        // const { data } = await clienteAxios.post("/reportes/", formData, {
-        //     headers: {
-        //       "Content-Type": "multipart/form-data",
-        //     },
-        //   });
-          console.log("Implementa el envio....");
+        formData.append("archivo", blob, fileName);
+       
+        const { data } = await clienteAxios.post("/admin/enviar-excel", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+        return data.message;
     }
   } catch (error) {
     console.error("Error al generar el reporte de Excel:", error);

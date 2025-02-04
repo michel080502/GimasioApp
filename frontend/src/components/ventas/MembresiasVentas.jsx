@@ -123,7 +123,16 @@ const MembresiasVentas = () => {
     return mostrarAlerta("Reporte descargado", false);
   };
   const handleSendReport = async () => {
-    console.log("Enviando.....");
+    if (filtroData().length === 0) {
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
+    exportDataToExcel(
+      generateExcelData(filtroData()),
+      headers,
+      `reporte_ventas_membresia${membresiaFiltro || ""}`,
+      "send"
+    );
+    return mostrarAlerta("Reporte enviado", false);
   };
   const toggleDelete = (id) => {
     setDeleteVenta(id);

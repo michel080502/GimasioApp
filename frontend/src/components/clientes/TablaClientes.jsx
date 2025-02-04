@@ -62,28 +62,30 @@ const TablaClientes = ({ clientes, openModal, dataDeleted }) => {
   };
 
   const handleDownload = async () => {
+    if (filteredClientes.length === 0) {
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
     exportDataToExcel(
       generateExcelData(filteredClientes),
       headers,
       "reportes_clientes",
       "download"
     );
+    return mostrarAlerta("Reporte descargado", false);
   };
 
   const handleSendReport = async () => {
+    if (filteredClientes.length === 0) {
+      return mostrarAlerta("No hay datos para exportar", true);
+    }
     exportDataToExcel(
       generateExcelData(filteredClientes),
       headers,
       "reportes_clientes",
       "send"
     );
+    return mostrarAlerta("Reporte enviado", false);
   };
-
-
-  // Escuchar el evento "nuevo-cliente" mediante el hook
-  // useSocket({
-  //   "nuevo-cliente": handleNewClient, // Agregar el nuevo cliente a la lista
-  // });
 
   const toggleDelete = (id) => {
     setDeleteCliente(deleteCliente === id ? null : id);
@@ -95,7 +97,7 @@ const TablaClientes = ({ clientes, openModal, dataDeleted }) => {
       dataDeleted(id);
       mostrarAlerta(data.msg, false);
     } catch (error) {
-      mostrarAlerta(error.response.data.msg, true)
+      mostrarAlerta(error.response.data.msg, true);
     }
   };
 
@@ -176,11 +178,7 @@ const TablaClientes = ({ clientes, openModal, dataDeleted }) => {
               </tr>
             ) : (
               filteredClientes.map((cliente, index) => (
-                <tr
-                  key={cliente.id}
-                  className={"hover:bg-gray-100 "}
-
-                >
+                <tr key={cliente.id} className={"hover:bg-gray-100 "}>
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">
                     {index + 1}
                   </td>
