@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .transition-delay {
+    transition-delay: 0.3s;
+  }
+  .no-select {
+    user-select: none; /* Evita la selección de texto */
+  }
+}
+
+@layer components {
+  .overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50;
+  }
+  .modal {
+    @apply bg-white rounded-lg shadow-lg p-6 w-auto  m-10 md:m-4;
+  }
+  
+  .scale-hover {
+    @apply hover:scale-125 transition-transform duration-300 ease-in-out;
+  }
+  .scale-hover-10 {
+    @apply hover:scale-110 transition-transform duration-300 ease-in-out;
+  }
+  .button {
+    @apply bg-red-900 hover:bg-red-600 transition duration-300 py-1 px-3 rounded-full font-semibold text-white;
+  }
+  .contenedor-auth {
+    @apply shadow-md w-3/4 shadow-slate-600 p-3 m-auto  md:my-0 md:mx-20 rounded-2xl flex flex-col justify-center items-center text-sm col-span-1 gap-3;
+  }
+
+  .img-auth-mobile {
+    @apply shadow-lg block md:hidden w-28  mx-auto -mt-11 bg-black p-4 rounded-full ring ring-red-700;
+  }
+  .contenedor-img-auth {
+    @apply hidden md:flex bg-zinc-800 text-white h-dvh w-full flex-col justify-center place-items-center rounded-l-2xl;
+  }
+}
+
+body {
+  background-color: rgb(232, 232, 232);
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1.5s ease-out;
+}
+
+/* Animación para ocultar el menú */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+/* Clase para aplicar la animación de salida */
+.animate-fadeOut {
+  animation: fadeOut 1s ease forwards;
+}
